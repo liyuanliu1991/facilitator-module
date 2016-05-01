@@ -15,7 +15,7 @@ public class FacilitatorID {
     public String getFRService() { return FR_service; }
 
     @JsonProperty("FacId")
-    public void setFRUserID(String FR_userID) { this.FR_userID = FR_userID; }
+    public void setFRPersonID(String FR_userID) { this.FR_userID = FR_userID; }
     @JsonProperty("FacId")
-    public String getFRUserID() { return FR_userID; }
+    public String getFRPersonID() { return FR_userID; }
 }
