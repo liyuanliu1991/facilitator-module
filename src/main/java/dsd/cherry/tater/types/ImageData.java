@@ -1,43 +1,41 @@
 package dsd.cherry.tater.types;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by James Beach on 4/29/2016.
  */
 public class ImageData {
     private String imageID;
-    private BufferedImage image;
+    private byte[] image;
+    private List<ImageCode> codes;
+    private boolean accepted;
 
-    @JsonProperty("base64_image")
-    public void setImageBinary(byte[] base64) {
-        try {
-            image = ImageIO.read(new ByteArrayInputStream(base64));
-        } catch (IOException e) {
-            System.out.println("Error reading byte array: " + e.getMessage());
-            e.printStackTrace();
-        }
+    private ImageData() {
+        codes = new ArrayList<ImageCode>();
+        accepted = false;
     }
-    @JsonProperty("base64_image")
+
+    public void setImageBinary(byte[] image) {
+        this.image = image;
+    }
     public byte[] getImageBinary() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            ImageIO.write(image, "png", out);
-        } catch (IOException e) {
-            System.out.println("Error writing byte array: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return out.toByteArray();
+        return this.image;
     }
 
-    @JsonProperty("internal_id")
     public void setImageID(String imageID) { this.imageID = imageID; }
-    @JsonProperty("internal_id")
     public String getImageID() { return imageID; }
+
+    public void addCode(ImageCode code) { codes.add(code); }
+    public void setCodes(List<ImageCode> codes) { this.codes = codes; }
+    public ImageCode getCode() {
+        for (ImageCode code : codes) {
+            if (!code.equals(ImageCode.IMAGE_OK)) return code;
+        }
+        return ImageCode.IMAGE_OK;
+    }
+
+    public void setAcceptedByService(boolean accepted) { this.accepted = accepted; }
+    public boolean getAcceptedByService() { return accepted; }
 }

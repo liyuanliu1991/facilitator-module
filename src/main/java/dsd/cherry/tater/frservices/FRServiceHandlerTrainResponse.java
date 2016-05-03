@@ -1,5 +1,9 @@
 package dsd.cherry.tater.frservices;
 
+import dsd.cherry.tater.types.ImageData;
+
+import java.util.List;
+
 /**
  * Created by James Beach on 4/29/2016.
  */
@@ -8,6 +12,7 @@ public class FRServiceHandlerTrainResponse {
     private boolean serviceResponded;
     private String FRPersonID;
     private boolean isTrained;
+    private List<ImageData> images;
 
     /**
      * <b>Constructor.</b> Build this return type to provide accurate information about the results of training a
@@ -24,16 +29,22 @@ public class FRServiceHandlerTrainResponse {
     protected FRServiceHandlerTrainResponse(String serviceName,
                                             boolean serviceResponded,
                                             String FRPersonID,
-                                            boolean isTrained) {
+                                            boolean isTrained,
+                                            List<ImageData> images) {
         this.serviceName = serviceName;
         this.serviceResponded = serviceResponded;
         this.FRPersonID = FRPersonID;
         this.isTrained = isTrained;
+        this.images = images;
     }
 
     public String getServiceName() { return serviceName; }
 
     public boolean getServiceResponded() { return serviceResponded; }
 
+    public String getFRPersonID() { return FRPersonID; }
+
     public boolean getTrainingStatus() { return isTrained; }
+
+    public List<ImageData> getImageData() { return images; }
 }
