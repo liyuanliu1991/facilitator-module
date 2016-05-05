@@ -1,7 +1,9 @@
 package dsd.cherry.tater.types;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by James Beach on 4/29/2016.
@@ -29,11 +31,25 @@ public class ImageData {
 
     public void addCode(StatusCode code) { codes.add(code); }
     public void setCodes(List<StatusCode> codes) { this.codes = codes; }
+
     public StatusCode getCode() {
         for (StatusCode code : codes) {
             if (!code.equals(StatusCode.IMAGE_OK)) return code;
         }
         return StatusCode.IMAGE_OK;
+    }
+
+    public Map<String,Object> getCodeJSON() {
+        StatusCode notable = StatusCode.IMAGE_OK;
+        for (StatusCode code : codes) {
+            if (!code.equals(StatusCode.IMAGE_OK)) notable = code;
+        }
+
+        Map<String,Object> result = new HashMap<String, Object>();
+        result.put("appCode",notable.getAppCode());
+        result.put("message",notable.getMessage());
+
+        return result;
     }
 
     public void setAcceptedByService(boolean accepted) { this.accepted = accepted; }

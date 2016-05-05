@@ -1,11 +1,17 @@
 package dsd.cherry.tater.types;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import dsd.cherry.tater.types.jax_serializers.StatusCodeSerializer;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Corresponds to 'appCode' in the Facilitator Interface Specification.
  * Created by James Beach on 5/1/2016.
  */
+@JsonSerialize(using = StatusCodeSerializer.class, as = String.class)
+@JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public enum StatusCode {
     IMAGE_OK(1300) {
         @Override
@@ -66,11 +72,12 @@ public enum StatusCode {
 
     private int value;
 
+    @JsonProperty("message")
     public abstract String getMessage();
 
     public abstract int getHTTPCode();
 
-    @JsonValue
+    @JsonProperty("appCode")
     public int getAppCode() {
         return value;
     }

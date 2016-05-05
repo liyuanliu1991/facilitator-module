@@ -12,6 +12,8 @@ import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthResponse;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The FacilitatorService exposes the Facilitator API as a RESTful web service for use by the Authentication Server.
@@ -63,9 +65,9 @@ public class FacilitatorService {
         reply.setInternalID(result.getInternalID());
         reply.setTrainingStatus(result.getTrainingStatus());
         reply.setImages(result.getImageData());
-        reply.setHTTPCode(ImageCode.IMAGE_OK.getHTTPCode());
+        reply.setHTTPCode(StatusCode.IMAGE_OK.getHTTPCode());
         for (ImageData img : result.getImageData()) {
-            if (!img.getCode().equals(ImageCode.IMAGE_OK)) {
+            if (!img.getCode().equals(StatusCode.IMAGE_OK)) {
                 reply.setHTTPCode(img.getCode().getHTTPCode());
                 break;
             }
@@ -76,7 +78,7 @@ public class FacilitatorService {
         } catch (JsonProcessingException e) {
             System.out.println("/train: Error producing JSON reply: " + e.getMessage());
             e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("/train: Error producing JSON reply.").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("tater/train: Error producing JSON reply.").build();
         }
     }
 
@@ -105,7 +107,13 @@ public class FacilitatorService {
         System.out.println("UserId: " + req.getInternalID());
         System.out.println("ImageId: " + req.getImage().getImageID());
         System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage().getImageBinary()));
-        // System.out.println(json);
+
+        // Dummy list until spec is fixed to include FacilitatorIDs
+        List<FacilitatorID> dummy = new ArrayList<FacilitatorID>();
+
+        SMVerifyData result = services.verify(req.getInternalID(), dummy, req.getImage());
+
+
         return Response.status(200).entity("I'm alive").build();
     }
 
