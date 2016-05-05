@@ -10,6 +10,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthResponse;
+import dsd.cherry.tater.types.jax_pojos.AuthRequestTrain;
+import dsd.cherry.tater.types.jax_pojos.AuthRequestVerify;
+import dsd.cherry.tater.types.jax_pojos.AuthResponseTrain;
+import dsd.cherry.tater.types.jax_pojos.AuthResponseVerify;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -92,7 +96,7 @@ public class FacilitatorService {
     @POST
     @Path("/verify")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response verify(String JSON) {
         ObjectMapper mapIn = this.mapper.copy();
         mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
@@ -112,9 +116,12 @@ public class FacilitatorService {
         List<FacilitatorID> dummy = new ArrayList<FacilitatorID>();
 
         SMVerifyData result = services.verify(req.getInternalID(), dummy, req.getImage());
+        AuthResponseVerify reply = new AuthResponseVerify();
+        reply.setInternalID(result.getInternalID());
+        reply.setHTTPStatusCode(200);
+        reply.setMatch(result.isMatch());
 
-
-        return Response.status(200).entity("I'm alive").build();
+        return Response.status(reply.getHTTPStatusCode()).entity(reply).build();
     }
 
     /**

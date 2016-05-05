@@ -1,6 +1,8 @@
-package dsd.cherry.tater.types;
+package dsd.cherry.tater.types.jax_pojos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import dsd.cherry.tater.types.FacilitatorID;
+import dsd.cherry.tater.types.ImageData;
 
 import java.util.List;
 

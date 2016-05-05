@@ -1,6 +1,7 @@
-package dsd.cherry.tater.types;
+package dsd.cherry.tater.types.jax_pojos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import dsd.cherry.tater.types.ImageData;
 
 /**
  * Created by James Beach on 4/29/2016.
