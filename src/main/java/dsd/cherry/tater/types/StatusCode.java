@@ -1,13 +1,12 @@
 package dsd.cherry.tater.types;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Corresponds to 'appCode' in the Facilitator Interface Specification.
  * Created by James Beach on 5/1/2016.
  */
-public enum ImageCode {
+public enum StatusCode {
     IMAGE_OK(1300) {
         @Override
         public String getMessage() {
@@ -57,6 +56,12 @@ public enum ImageCode {
         public int getHTTPCode() {
             return 434;
         }
+    },
+    BAD_TAG(1502) {
+        @Override
+        public String getMessage() { return "BAD_TAG"; }
+        @Override
+        public int getHTTPCode() { return 452; }
     };
 
     private int value;
@@ -70,5 +75,5 @@ public enum ImageCode {
         return value;
     }
 
-    ImageCode(int value) { this.value = value; }
+    StatusCode(int value) { this.value = value; }
 }

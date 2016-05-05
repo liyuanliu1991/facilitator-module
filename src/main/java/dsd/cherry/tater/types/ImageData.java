@@ -9,11 +9,11 @@ import java.util.List;
 public class ImageData {
     private String imageID;
     private byte[] image;
-    private List<ImageCode> codes;
+    private List<StatusCode> codes;
     private boolean accepted;
 
     private ImageData() {
-        codes = new ArrayList<ImageCode>();
+        codes = new ArrayList<StatusCode>();
         accepted = false;
     }
 
@@ -27,13 +27,13 @@ public class ImageData {
     public void setImageID(String imageID) { this.imageID = imageID; }
     public String getImageID() { return imageID; }
 
-    public void addCode(ImageCode code) { codes.add(code); }
-    public void setCodes(List<ImageCode> codes) { this.codes = codes; }
-    public ImageCode getCode() {
-        for (ImageCode code : codes) {
-            if (!code.equals(ImageCode.IMAGE_OK)) return code;
+    public void addCode(StatusCode code) { codes.add(code); }
+    public void setCodes(List<StatusCode> codes) { this.codes = codes; }
+    public StatusCode getCode() {
+        for (StatusCode code : codes) {
+            if (!code.equals(StatusCode.IMAGE_OK)) return code;
         }
-        return ImageCode.IMAGE_OK;
+        return StatusCode.IMAGE_OK;
     }
 
     public void setAcceptedByService(boolean accepted) { this.accepted = accepted; }
