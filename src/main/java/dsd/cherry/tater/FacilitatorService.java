@@ -50,7 +50,7 @@ public class FacilitatorService {
         } catch (IOException e) {
             System.out.println("Error reading JSON Train Request: " + e.getMessage());
             e.printStackTrace();
-            return Response.status(400).entity("Error reading JSON request.").build();
+            return Response.status(452).entity("Error reading JSON request.").build();
         }
         System.out.println("UserId: " + req.getInternalID());
         System.out.println(req.getImages().toString());
@@ -58,25 +58,25 @@ public class FacilitatorService {
         ObjectMapper mapOut = this.mapper.copy();
         mapOut.addMixIn(ImageData.class, MxImageDataAuthResponse.class);
 
-        SMTrainData training = services.train(req.getFACIDs(), req.getImages(), req.getInternalID());
-        AuthResponseTrain response = new AuthResponseTrain();
-        response.setInternalID(training.getInternalID());
-        response.setTrainingStatus(training.getTrainingStatus());
-        response.setImages(training.getImageData());
-        response.setHTTPCode(ImageCode.IMAGE_OK.getHTTPCode());
-        for (ImageData img : training.getImageData()) {
+        SMTrainData result = services.train(req.getInternalID(), req.getFACIDs(), req.getImages());
+        AuthResponseTrain reply = new AuthResponseTrain();
+        reply.setInternalID(result.getInternalID());
+        reply.setTrainingStatus(result.getTrainingStatus());
+        reply.setImages(result.getImageData());
+        reply.setHTTPCode(ImageCode.IMAGE_OK.getHTTPCode());
+        for (ImageData img : result.getImageData()) {
             if (!img.getCode().equals(ImageCode.IMAGE_OK)) {
-                response.setHTTPCode(img.getCode().getHTTPCode());
+                reply.setHTTPCode(img.getCode().getHTTPCode());
                 break;
             }
         }
 
         try {
-            return Response.status(response.getHTTPCode()).entity(mapOut.writeValueAsString(response)).build();
+            return Response.status(reply.getHTTPCode()).entity(mapOut.writeValueAsString(reply)).build();
         } catch (JsonProcessingException e) {
-            System.out.println("Error producing JSON Train Reply: " + e.getMessage());
+            System.out.println("/train: Error producing JSON reply: " + e.getMessage());
             e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("There was an error producing the JSON reply.").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("/train: Error producing JSON reply.").build();
         }
     }
 
@@ -117,7 +117,7 @@ public class FacilitatorService {
     @GET
     @Path("/test/{param}")
     public Response test(@PathParam("param") String message) {
-        String output = "Tater is alive and says " + message;
-        return Response.status(200).entity(output).build();
+        String output = "Tater, the Facilitating Potato, is alive and says " + message;
+        return Response.status(Response.Status.OK).entity(output).build();
     }
 }

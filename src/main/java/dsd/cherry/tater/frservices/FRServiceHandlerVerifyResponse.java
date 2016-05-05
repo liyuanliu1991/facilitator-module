@@ -36,7 +36,9 @@ public class FRServiceHandlerVerifyResponse {
 
     public boolean getServiceResponded() { return serviceResponded; }
 
-    public float getConfidenceValue() { return confidence; }
+    public float getConfidence() { return confidence; }
+
+    public float getCutoff() { return cutoff; }
 
     public String getFRPersonID() { return FRPersonID; }
 }

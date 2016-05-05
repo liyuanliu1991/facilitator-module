@@ -10,9 +10,9 @@ import java.util.List;
 public abstract class FRServiceHandler {
     private int timeoutSec;
 
-    abstract public FRServiceHandlerTrainResponse train(String internalID, List<ImageData> images);
+    abstract public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images);
 
-    abstract public FRServiceHandlerVerifyResponse verify(String internalID, ImageData image);
+    abstract public FRServiceHandlerVerifyResponse verify(String personID, ImageData image);
 
     abstract public String getFRServiceName();
 

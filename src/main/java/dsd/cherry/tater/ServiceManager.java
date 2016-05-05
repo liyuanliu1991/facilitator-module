@@ -2,9 +2,11 @@ package dsd.cherry.tater;
 
 import dsd.cherry.tater.frservices.FRServiceHandler;
 import dsd.cherry.tater.frservices.FRServiceHandlerTrainResponse;
+import dsd.cherry.tater.frservices.FRServiceHandlerVerifyResponse;
 import dsd.cherry.tater.types.FacilitatorID;
 import dsd.cherry.tater.types.ImageData;
 import dsd.cherry.tater.types.SMTrainData;
+import dsd.cherry.tater.types.SMVerifyData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,7 +33,7 @@ public class ServiceManager {
         services.put(service.getFRServiceName(), service);
     }
 
-    public SMTrainData train(List<FacilitatorID> FACIDs, List<ImageData> images, String internalID) {
+    public SMTrainData train(final String internalID, List<FacilitatorID> FACIDs, List<ImageData> images) {
         boolean trained = true;
 
         Map<String,String> FRPersonIDs = new HashMap<String, String>();
@@ -61,5 +63,47 @@ public class ServiceManager {
         }
 
         return new SMTrainData(internalID, trained, responses, images);
+    }
+
+    public SMVerifyData verify(final String internalID, List<FacilitatorID> FACIDs, ImageData image) {
+        boolean match = false;
+        float confidence = 0, cutoff = 0;
+        int totalServices = services.size();
+        int totalResponded = 0;
+        boolean consensus = true;
+        List<FRServiceHandlerVerifyResponse> inConsensus = new ArrayList<FRServiceHandlerVerifyResponse>();
+        List<FRServiceHandlerVerifyResponse> notInConsensus = new ArrayList<FRServiceHandlerVerifyResponse>();
+
+        for (FacilitatorID facID : FACIDs) {
+            FRServiceHandlerVerifyResponse response =
+                services.get(facID.getFRService()).verify(facID.getFRPersonID(), image);
+
+            if (response.getServiceResponded()) {
+                ++totalResponded;
+                confidence += response.getConfidence();
+                cutoff += response.getCutoff();
+                if (!response.getFRPersonID().equals(facID.getFRPersonID())) {
+                    consensus = false;
+                    notInConsensus.add(response);
+                }
+                else {
+                    inConsensus.add(response);
+                }
+            }
+        }
+
+        confidence = confidence / totalResponded;
+        cutoff = cutoff / totalResponded;
+        match = consensus && (confidence >= cutoff);
+
+        return new SMVerifyData(internalID,
+                                match,
+                                inConsensus,
+                                notInConsensus,
+                                totalServices,
+                                totalResponded,
+                                confidence,
+                                cutoff,
+                                consensus);
     }
 }
