@@ -23,7 +23,7 @@ import java.util.List;
  * The FacilitatorService exposes the Facilitator API as a RESTful web service for use by the Authentication Server.
  *
  * @author Andrew James Beach
- * @version 0.1
+ * @version 0.3
  * Created by James Beach on 4/27/2016.
  */
 @Path("")
@@ -113,13 +113,14 @@ public class FacilitatorService {
         System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage().getImageBinary()));
 
         // Dummy list until spec is fixed to include FacilitatorIDs
-        List<FacilitatorID> dummy = new ArrayList<FacilitatorID>();
+        List<FacilitatorID> dummy = new ArrayList<>();
 
         SMVerifyData result = services.verify(req.getInternalID(), dummy, req.getImage());
         AuthResponseVerify reply = new AuthResponseVerify();
         reply.setInternalID(result.getInternalID());
         reply.setHTTPStatusCode(200);
         reply.setMatch(result.isMatch());
+        reply.addStatusCode(StatusCode.IMAGE_OK);
 
         return Response.status(reply.getHTTPStatusCode()).entity(reply).build();
     }

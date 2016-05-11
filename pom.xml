@@ -4,7 +4,7 @@
   <groupId>dsd.cherry.tater</groupId>
   <artifactId>tater</artifactId>
   <packaging>war</packaging>
-  <version>0.1</version>
+  <version>0.3</version>
   <name>tater Maven Webapp</name>
   <url>http://maven.apache.org</url>
   <dependencies>
@@ -45,12 +45,22 @@
     <finalName>tater</finalName>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.tomcat.maven</groupId>
         <artifactId>tomcat7-maven-plugin</artifactId>
         <version>2.2</version>
         <configuration>
           <server>TomcatServer</server>
-          <path>/tater</path>
+          <port>7473</port>
+          <path>/</path>
         </configuration>
       </plugin>
     </plugins>
