@@ -19,8 +19,8 @@ public class AuthResponseTrain {
     private int HTTPCode;
 
     public AuthResponseTrain() {
-        FACIDs = new ArrayList<FacilitatorID>();
-        images = new ArrayList<ImageData>();
+        FACIDs = new ArrayList<>();
+        images = new ArrayList<>();
         isTrained = false;
         HTTPCode = 200;
     }
@@ -30,9 +30,9 @@ public class AuthResponseTrain {
     @JsonProperty("UserId")
     public String getInternalID() { return internalID; }
 
-    @JsonProperty("FacilitatorId")
+    @JsonProperty("FacilitatorIds")
     public void setFACIDs(List<FacilitatorID> FACIDs) { this.FACIDs = FACIDs; }
-    @JsonProperty("FacilitatorId")
+    @JsonProperty("FacilitatorIds")
     public List<FacilitatorID> getFACIDs() { return FACIDs; }
 
     @JsonProperty("Images")

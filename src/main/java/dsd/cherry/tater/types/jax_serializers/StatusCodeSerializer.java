@@ -16,12 +16,9 @@ public class StatusCodeSerializer extends JsonSerializer<StatusCode> {
     public void serialize(StatusCode code, JsonGenerator gen, SerializerProvider provider)
             throws IOException, JsonProcessingException
     {
-        System.out.println("appCode: " + code.getAppCode());
-        System.out.println("message: " + code.getMessage());
-        if (code == null) return;
-        // gen.writeStartObject();
+        gen.writeStartObject();
         gen.writeNumberField("appCode", code.getAppCode());
         gen.writeStringField("message", code.getMessage());
-        // gen.writeEndObject();
+        gen.writeEndObject();
     }
 }
