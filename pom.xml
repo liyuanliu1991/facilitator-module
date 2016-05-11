@@ -39,6 +39,11 @@
       <artifactId>jackson-jaxrs-json-provider</artifactId>
       <version>2.7.3</version>
     </dependency>
+    <dependency>
+      <groupId>com.facepp</groupId>
+      <artifactId>faceppsdk-min</artifactId>
+      <version>1</version>
+    </dependency>
 
   </dependencies>
   <build>
@@ -65,4 +70,11 @@
       </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>tater-local-repo</id>
+      <url>file://${basedir}/lib</url>
+    </repository>
+  </repositories>
 </project>
