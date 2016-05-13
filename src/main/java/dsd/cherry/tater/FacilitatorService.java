@@ -9,21 +9,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
-import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthResponse;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestRegister;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The FacilitatorService exposes the Facilitator API as a RESTful web service for use by the Authentication Server.
  *
  * @author Andrew James Beach
- * @version 0.3
+ * @version 0.5
  * Created by James Beach on 4/27/2016.
  */
 @Path("")
@@ -61,15 +58,14 @@ public class FacilitatorService {
         System.out.println(req.getImages().toString());
 
         ObjectMapper mapOut = this.mapper.copy();
-        mapOut.addMixIn(ImageData.class, MxImageDataAuthResponse.class);
 
         SMTrainData result = services.train(null, null, req.getImages());
         AuthResponseRegister reply = new AuthResponseRegister();
         reply.setTrainingStatus(result.getTrainingStatus());
-        reply.setHTTPCode(StatusCode.IMAGE_OK.getHTTPCode());
+        reply.setHTTPCode(ErrorCodes.IMAGE_OK.getHTTPCode());
 
         for (ImageData img : result.getImageData()) {
-            reply.addCode(img.getCode());
+            reply.addCodes(img.getCodes());
         }
 
         try {
@@ -110,7 +106,7 @@ public class FacilitatorService {
         AuthResponseLogin reply = new AuthResponseLogin();
         reply.setHTTPStatusCode(200);
         reply.setMatch(result.isMatch());
-        reply.addStatusCode(StatusCode.IMAGE_OK);
+        reply.addStatusCode(ErrorCodes.IMAGE_OK);
 
         return Response.status(reply.getHTTPStatusCode()).entity(reply).build();
     }

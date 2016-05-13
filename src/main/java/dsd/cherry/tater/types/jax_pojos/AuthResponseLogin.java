@@ -1,11 +1,8 @@
 package dsd.cherry.tater.types.jax_pojos;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import dsd.cherry.tater.frservices.FRServiceHandlerVerifyResponse;
-import dsd.cherry.tater.types.SMVerifyData;
-import dsd.cherry.tater.types.StatusCode;
+import dsd.cherry.tater.types.ErrorCodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,19 +13,19 @@ import java.util.List;
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public class AuthResponseLogin {
     private boolean match;
-    private List<StatusCode> codes;
+    private List<ErrorCodes> codes;
     private int HTTPStatusCode;
 
     public AuthResponseLogin() {
-        codes = new ArrayList<StatusCode>();
+        codes = new ArrayList<ErrorCodes>();
     }
 
-    public void addStatusCode(StatusCode code) {
+    public void addStatusCode(ErrorCodes code) {
         codes.add(code);
     }
 
     @JsonProperty("errors")
-    public List<StatusCode> getStatusCodes() {
+    public List<ErrorCodes> getStatusCodes() {
         return codes;
     }
 

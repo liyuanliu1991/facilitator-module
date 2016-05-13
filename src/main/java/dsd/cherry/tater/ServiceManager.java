@@ -16,13 +16,13 @@ import java.util.Map;
 /**
  * Created by James Beach on 4/30/2016.
  */
-public class ServiceManager {
+class ServiceManager {
     private int timeoutSec;
     private Map<String,FRServiceHandler> services;
 
     public ServiceManager(int timeoutSeconds) {
         this.timeoutSec = timeoutSeconds;
-        services = new HashMap<String, FRServiceHandler>();
+        services = new HashMap<>();
     }
 
     public int getTimeout() { return timeoutSec; }
@@ -33,10 +33,10 @@ public class ServiceManager {
         services.put(service.getFRServiceName(), service);
     }
 
-    public SMTrainData train(final String internalID, List<FacilitatorID> FACIDs, List<ImageData> images) {
+    SMTrainData train(final String internalID, List<FacilitatorID> FACIDs, List<ImageData> images) {
         boolean trained = true;
 
-        Map<String,String> FRPersonIDs = new HashMap<String, String>();
+        Map<String,String> FRPersonIDs = new HashMap<>();
 
         if (FACIDs != null) {
             for (FacilitatorID f : FACIDs) {
@@ -44,7 +44,7 @@ public class ServiceManager {
             }
         }
 
-        List<FRServiceHandlerTrainResponse> responses = new ArrayList<FRServiceHandlerTrainResponse>();
+        List<FRServiceHandlerTrainResponse> responses = new ArrayList<>();
 
         // for each supported service
         for (Map.Entry<String,FRServiceHandler> s : services.entrySet()) {
@@ -59,6 +59,7 @@ public class ServiceManager {
             else {
                 response = s.getValue().train(internalID, images);
             }
+            responses.add(response);
         }
 
         if (responses.isEmpty()) {
@@ -72,14 +73,14 @@ public class ServiceManager {
         return new SMTrainData(internalID, trained, responses, images);
     }
 
-    public SMVerifyData verify(List<FacilitatorID> FACIDs, ImageData image) {
-        boolean match = false;
+    SMVerifyData verify(List<FacilitatorID> FACIDs, ImageData image) {
+        boolean match;
         float confidence = 0, cutoff = 0;
         int totalServices = services.size();
         int totalResponded = 0;
         boolean consensus = true;
-        List<FRServiceHandlerVerifyResponse> inConsensus = new ArrayList<FRServiceHandlerVerifyResponse>();
-        List<FRServiceHandlerVerifyResponse> notInConsensus = new ArrayList<FRServiceHandlerVerifyResponse>();
+        List<FRServiceHandlerVerifyResponse> inConsensus = new ArrayList<>();
+        List<FRServiceHandlerVerifyResponse> notInConsensus = new ArrayList<>();
 
         for (FacilitatorID facID : FACIDs) {
             // TODO: What if the supplied FR service name doesn't exist in our list of services?

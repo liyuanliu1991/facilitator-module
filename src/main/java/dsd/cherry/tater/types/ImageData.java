@@ -11,11 +11,11 @@ import java.util.Map;
 public class ImageData {
     private String imageID;
     private byte[] image;
-    private List<StatusCode> codes;
+    private List<ErrorCode> codes;
     private boolean accepted;
 
     private ImageData() {
-        codes = new ArrayList<StatusCode>();
+        codes = new ArrayList<ErrorCode>();
         accepted = false;
     }
 
@@ -29,28 +29,10 @@ public class ImageData {
     public void setImageID(String imageID) { this.imageID = imageID; }
     public String getImageID() { return imageID; }
 
-    public void addCode(StatusCode code) { codes.add(code); }
-    public void setCodes(List<StatusCode> codes) { this.codes = codes; }
+    // TODO: Throw exception when it is not an image-related error code
+    public void addCode(ErrorCodes code) { codes.add(new ErrorCode(code, imageID)); }
 
-    public StatusCode getCode() {
-        for (StatusCode code : codes) {
-            if (!code.equals(StatusCode.IMAGE_OK)) return code;
-        }
-        return StatusCode.IMAGE_OK;
-    }
-
-    public Map<String,Object> getCodeJSON() {
-        StatusCode notable = StatusCode.IMAGE_OK;
-        for (StatusCode code : codes) {
-            if (!code.equals(StatusCode.IMAGE_OK)) notable = code;
-        }
-
-        Map<String,Object> result = new HashMap<String, Object>();
-        result.put("appCode",notable.getAppCode());
-        result.put("message",notable.getMessage());
-
-        return result;
-    }
+    public List<ErrorCode> getCodes() { return codes; }
 
     public void setAcceptedByService(boolean accepted) { this.accepted = accepted; }
     public boolean getAcceptedByService() { return accepted; }

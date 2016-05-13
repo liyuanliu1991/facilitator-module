@@ -2,9 +2,9 @@ package dsd.cherry.tater.types.jax_pojos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import dsd.cherry.tater.types.ErrorCode;
+import dsd.cherry.tater.types.ErrorCodes;
 import dsd.cherry.tater.types.FacilitatorID;
-import dsd.cherry.tater.types.ImageData;
-import dsd.cherry.tater.types.StatusCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class AuthResponseRegister {
     private List<FacilitatorID> FACIDs;
-    private List<StatusCode> codes;
+    private List<ErrorCode> codes;
     private boolean isTrained;
     private int HTTPCode;
 
@@ -25,12 +25,12 @@ public class AuthResponseRegister {
         HTTPCode = 200;
     }
 
-    @JsonProperty("facilitatorIds")
+    @JsonIgnore
     public void setFACIDs(List<FacilitatorID> FACIDs) { this.FACIDs = FACIDs; }
     @JsonProperty("facilitatorIds")
     public List<FacilitatorID> getFACIDs() { return FACIDs; }
 
-    @JsonProperty("success")
+    @JsonIgnore
     public void setTrainingStatus(boolean isTrained) { this.isTrained = isTrained; }
     @JsonIgnore
     public void setAsTrained() { this.isTrained = true; }
@@ -45,9 +45,13 @@ public class AuthResponseRegister {
     public int getHTTPCode() { return HTTPCode; }
 
     @JsonIgnore
-    public void setCodes(List<StatusCode> codes) { this.codes = codes; }
+    public void setCodes(List<ErrorCode> codes) { this.codes = codes; }
     @JsonIgnore
-    public void addCode(StatusCode code) { this.codes.add(code); }
+    public void addCode(ErrorCode code) { this.codes.add(code); }
+    @JsonIgnore
+    public void addCode(ErrorCodes code) {this.codes.add(new ErrorCode(code)); }
+    @JsonIgnore
+    public void addCodes(List<ErrorCode> codes) { this.codes.addAll(codes); }
     @JsonProperty("errors")
-    public List<StatusCode> getCodes() { return codes; }
+    public List<ErrorCode> getCodes() { return codes; }
 }

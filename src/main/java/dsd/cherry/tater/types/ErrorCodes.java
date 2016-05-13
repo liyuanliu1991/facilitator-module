@@ -8,11 +8,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Corresponds to 'appCode' in the Facilitator Interface Specification.
+ * @author Andrew James Beach
+ * @version 0.2
  * Created by James Beach on 5/1/2016.
  */
 @JsonSerialize(using = StatusCodeSerializer.class, as = String.class)
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
-public enum StatusCode {
+public enum ErrorCodes {
     IMAGE_OK(1300) {
         @Override
         public String getMessage() {
@@ -72,15 +74,15 @@ public enum StatusCode {
 
     private int value;
 
-    @JsonProperty("message")
+    @JsonProperty("errorMessage")
     public abstract String getMessage();
 
     public abstract int getHTTPCode();
 
-    @JsonProperty("appCode")
-    public int getAppCode() {
+    @JsonProperty("errorCode")
+    public int getErrorCode() {
         return value;
     }
 
-    StatusCode(int value) { this.value = value; }
+    ErrorCodes(int value) { this.value = value; }
 }
