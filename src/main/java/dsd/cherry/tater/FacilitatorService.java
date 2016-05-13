@@ -44,7 +44,7 @@ public class FacilitatorService {
      *            definition for the AuthResponseTrain object.
      */
     @POST
-    @Path("/train")
+    @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response train(String JSON) {
@@ -94,7 +94,7 @@ public class FacilitatorService {
      *            definition for the AuthResponseVerify object.
      */
     @POST
-    @Path("/verify")
+    @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response verify(String JSON) {
