@@ -15,71 +15,55 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(using = StatusCodeSerializer.class, as = String.class)
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public enum ErrorCodes {
-    IMAGE_OK(1300) {
+    /* A placeholder error code for when one is absolutely needed but no error has occurred.
+     * In general, this code should not be used; objects should be left null or lists empty.
+     */
+    OK(0) {
         @Override
         public String getMessage() {
-            return "IMAGE_OK";
-        }
-        @Override
-        public int getHTTPCode() {
-            return 200;
+            return "OK";
         }
     },
-    IMAGE_ERROR_UNSUPPORTED_FORMAT(1301) {
+    IMAGE_ERROR_FILE_TOO_LARGE(1) {
         @Override
         public String getMessage() {
-            return "IMAGE_ERROR_UNSUPPORTED_FORMAT";
-        }
-        @Override
-        public int getHTTPCode() {
-            return 431;
+            return "The image file is too large.";
         }
     },
+    IMAGE_ERROR_FACE_NOT_DETECTED(2) {
+        @Override
+        public String getMessage() {
+            return "No face could be detected in the image.";
+        }
+    },
+    IMAGE_ERROR_UNKNOWN(3) {
+        @Override
+        public String getMessage() {
+            return "There is something unknown wrong with the image.";
+        }
+    },
+    IMAGE_ERROR_UNSUPPORTED_FORMAT(4) {
+        @Override
+        public String getMessage() {
+            return "The image is in an unsupported file format.";
+        }
+    },
+    BAD_JSON_TAG(5) {
+        @Override
+        public String getMessage() { return "A JSON tag is missing or formatted incorrectly."; }
+    },
+    @Deprecated
     IMAGE_ERROR_FAILED_TO_DOWNLOAD(1302) {
         @Override
         public String getMessage() {
             return "IMAGE_ERROR_FAILED_TO_DOWNLOAD";
         }
-        @Override
-        public int getHTTPCode() {
-            return 432;
-        }
-    },
-    IMAGE_ERROR_FILE_TOO_LARGE(1303) {
-        @Override
-        public String getMessage() {
-            return "IMAGE_ERROR_FILE_TOO_LARGE";
-        }
-        @Override
-        public int getHTTPCode() {
-            return 433;
-        }
-    },
-    IMAGE_ERROR(1304) {
-        @Override
-        public String getMessage() {
-            return "IMAGE_ERROR";
-        }
-        @Override
-        public int getHTTPCode() {
-            return 434;
-        }
-    },
-    BAD_TAG(1502) {
-        @Override
-        public String getMessage() { return "BAD_TAG"; }
-        @Override
-        public int getHTTPCode() { return 452; }
     };
 
     private int value;
 
-    @JsonProperty("errorMessage")
     public abstract String getMessage();
 
-    public abstract int getHTTPCode();
-
-    @JsonProperty("errorCode")
     public int getErrorCode() {
         return value;
     }

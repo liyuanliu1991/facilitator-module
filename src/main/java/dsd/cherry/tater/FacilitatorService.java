@@ -62,7 +62,7 @@ public class FacilitatorService {
         SMTrainData result = services.train(null, null, req.getImages());
         AuthResponseRegister reply = new AuthResponseRegister();
         reply.setTrainingStatus(result.getTrainingStatus());
-        reply.setHTTPCode(ErrorCodes.IMAGE_OK.getHTTPCode());
+        reply.setHTTPCode(Response.Status.OK);
 
         for (ImageData img : result.getImageData()) {
             reply.addCodes(img.getCodes());
@@ -106,7 +106,6 @@ public class FacilitatorService {
         AuthResponseLogin reply = new AuthResponseLogin();
         reply.setHTTPStatusCode(200);
         reply.setMatch(result.isMatch());
-        reply.addStatusCode(ErrorCodes.IMAGE_OK);
 
         return Response.status(reply.getHTTPStatusCode()).entity(reply).build();
     }
