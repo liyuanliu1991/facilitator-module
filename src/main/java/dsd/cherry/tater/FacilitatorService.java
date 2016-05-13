@@ -12,7 +12,7 @@ import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthResponse;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestRegister;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestVerify;
-import dsd.cherry.tater.types.jax_pojos.AuthResponseTrain;
+import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseVerify;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class FacilitatorService {
      * recognition services and at the same time get the training status of those services.
      * @param JSON A JSON training request from the Authentication Server.
      * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specification and the
-     *            definition for the AuthResponseTrain object.
+     *            definition for the AuthResponseRegister object.
      */
     @POST
     @Path("/register")
@@ -64,16 +64,12 @@ public class FacilitatorService {
         mapOut.addMixIn(ImageData.class, MxImageDataAuthResponse.class);
 
         SMTrainData result = services.train(null, null, req.getImages());
-        AuthResponseTrain reply = new AuthResponseTrain();
-        reply.setInternalID(result.getInternalID());
+        AuthResponseRegister reply = new AuthResponseRegister();
         reply.setTrainingStatus(result.getTrainingStatus());
-        reply.setImages(result.getImageData());
         reply.setHTTPCode(StatusCode.IMAGE_OK.getHTTPCode());
+
         for (ImageData img : result.getImageData()) {
-            if (!img.getCode().equals(StatusCode.IMAGE_OK)) {
-                reply.setHTTPCode(img.getCode().getHTTPCode());
-                break;
-            }
+            reply.addCode(img.getCode());
         }
 
         try {
