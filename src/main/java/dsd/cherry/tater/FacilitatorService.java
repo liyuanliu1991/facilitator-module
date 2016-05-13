@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthResponse;
-import dsd.cherry.tater.types.jax_pojos.AuthRequestTrain;
+import dsd.cherry.tater.types.jax_pojos.AuthRequestRegister;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestVerify;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseTrain;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseVerify;
@@ -50,21 +50,20 @@ public class FacilitatorService {
     public Response train(String JSON) {
         ObjectMapper mapIn = this.mapper.copy();
         mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
-        AuthRequestTrain req;
+        AuthRequestRegister req;
         try {
-            req = mapIn.readValue(JSON, AuthRequestTrain.class);
+            req = mapIn.readValue(JSON, AuthRequestRegister.class);
         } catch (IOException e) {
             System.out.println("Error reading JSON Train Request: " + e.getMessage());
             e.printStackTrace();
             return Response.status(452).entity("Error reading JSON request.").build();
         }
-        System.out.println("UserId: " + req.getInternalID());
         System.out.println(req.getImages().toString());
 
         ObjectMapper mapOut = this.mapper.copy();
         mapOut.addMixIn(ImageData.class, MxImageDataAuthResponse.class);
 
-        SMTrainData result = services.train(req.getInternalID(), req.getFACIDs(), req.getImages());
+        SMTrainData result = services.train(null, null, req.getImages());
         AuthResponseTrain reply = new AuthResponseTrain();
         reply.setInternalID(result.getInternalID());
         reply.setTrainingStatus(result.getTrainingStatus());

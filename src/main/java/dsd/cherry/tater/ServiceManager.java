@@ -38,17 +38,24 @@ public class ServiceManager {
 
         Map<String,String> FRPersonIDs = new HashMap<String, String>();
 
-        for (FacilitatorID f : FACIDs) {
-            FRPersonIDs.put(f.getFRService(), f.getFRPersonID());
+        if (FACIDs != null) {
+            for (FacilitatorID f : FACIDs) {
+                FRPersonIDs.put(f.getFRService(), f.getFRPersonID());
+            }
         }
 
         List<FRServiceHandlerTrainResponse> responses = new ArrayList<FRServiceHandlerTrainResponse>();
 
+        // for each supported service
         for (Map.Entry<String,FRServiceHandler> s : services.entrySet()) {
             FRServiceHandlerTrainResponse response;
+            // further train the service if it has been trained before
+            // (NOT SUPPORTED AT THIS TIME)
+            // TODO: Remove or comment out this code.
             if (FRPersonIDs.containsKey(s.getKey())) {
                 response = s.getValue().train(FRPersonIDs.get(s.getKey()), images);
             }
+            // or else train it anew.
             else {
                 response = s.getValue().train(internalID, images);
             }
