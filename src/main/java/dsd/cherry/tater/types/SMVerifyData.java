@@ -8,15 +8,13 @@ import java.util.List;
  * Created by James Beach on 5/3/2016.
  */
 public class SMVerifyData {
-    private String internalID;
     private List<FRServiceHandlerVerifyResponse> inConsensus;
     private List<FRServiceHandlerVerifyResponse> notInConsensus;
     private int     totalServices,  totalResponded;
     private float   confidence,     cutoff;
     private boolean match,          consensus;
 
-    public SMVerifyData(String                                  internalID,
-                        boolean                                 match,
+    public SMVerifyData(boolean                                 match,
                         List<FRServiceHandlerVerifyResponse>    inConsensus,
                         List<FRServiceHandlerVerifyResponse>    notInConsensus,
                         int                                     totalServices,
@@ -24,7 +22,6 @@ public class SMVerifyData {
                         float                                   confidence,
                         float                                   cutoff,
                         boolean                                 consensus) {
-        this.internalID = internalID;
         this.inConsensus = inConsensus;
         this.totalServices = totalServices;
         this.totalResponded = totalResponded;
@@ -33,8 +30,6 @@ public class SMVerifyData {
         this.match = match;
         this.consensus = consensus;
     }
-
-    public String getInternalID() { return internalID; }
 
     public boolean isMatch() { return match; }
 

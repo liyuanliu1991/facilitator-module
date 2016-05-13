@@ -11,9 +11,9 @@ import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthResponse;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestRegister;
-import dsd.cherry.tater.types.jax_pojos.AuthRequestVerify;
+import dsd.cherry.tater.types.jax_pojos.AuthRequestLogin;
+import dsd.cherry.tater.types.jax_pojos.AuthResponseLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
-import dsd.cherry.tater.types.jax_pojos.AuthResponseVerify;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,7 +86,7 @@ public class FacilitatorService {
      * against a person's ID.
      * @param JSON A JSON verification request from the Authentication Server.
      * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specifcation and the
-     *            definition for the AuthResponseVerify object.
+     *            definition for the AuthResponseLogin object.
      */
     @POST
     @Path("/login")
@@ -95,24 +95,19 @@ public class FacilitatorService {
     public Response verify(String JSON) {
         ObjectMapper mapIn = this.mapper.copy();
         mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
-        AuthRequestVerify req;
+        AuthRequestLogin req;
         try {
-            req = mapIn.readValue(JSON, AuthRequestVerify.class);
+            req = mapIn.readValue(JSON, AuthRequestLogin.class);
         } catch (IOException e) {
             System.out.println("Error reading JSON Verify Request: " + e.getMessage());
             e.printStackTrace();
             return Response.status(400).entity("Error reading JSON request.").build();
         }
-        System.out.println("UserId: " + req.getInternalID());
         System.out.println("ImageId: " + req.getImage().getImageID());
         System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage().getImageBinary()));
 
-        // Dummy list until spec is fixed to include FacilitatorIDs
-        List<FacilitatorID> dummy = new ArrayList<>();
-
-        SMVerifyData result = services.verify(req.getInternalID(), dummy, req.getImage());
-        AuthResponseVerify reply = new AuthResponseVerify();
-        reply.setInternalID(result.getInternalID());
+        SMVerifyData result = services.verify(req.getFACIDs(), req.getImage());
+        AuthResponseLogin reply = new AuthResponseLogin();
         reply.setHTTPStatusCode(200);
         reply.setMatch(result.isMatch());
         reply.addStatusCode(StatusCode.IMAGE_OK);

@@ -14,26 +14,20 @@ import java.util.List;
  * Created by James Beach on 5/3/2016.
  */
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
-public class AuthResponseVerify {
-    private String internalID;
+public class AuthResponseLogin {
     private boolean match;
     private List<StatusCode> codes;
     private int HTTPStatusCode;
 
-    public AuthResponseVerify() {
+    public AuthResponseLogin() {
         codes = new ArrayList<StatusCode>();
     }
-
-    public void setInternalID(String internalID) { this.internalID = internalID; }
-
-    @JsonProperty("UserId")
-    public String getInternalID() { return internalID; }
 
     public void addStatusCode(StatusCode code) {
         codes.add(code);
     }
 
-    @JsonProperty("CodeError")
+    @JsonProperty("errors")
     public List<StatusCode> getStatusCodes() {
         return codes;
     }
@@ -42,7 +36,7 @@ public class AuthResponseVerify {
         this.match = match;
     }
 
-    @JsonProperty("IsSamePerson")
+    @JsonProperty("success")
     public boolean getMatch() { return match; }
 
     public void setHTTPStatusCode(int code) { this.HTTPStatusCode = code; }

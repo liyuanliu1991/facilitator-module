@@ -72,7 +72,7 @@ public class ServiceManager {
         return new SMTrainData(internalID, trained, responses, images);
     }
 
-    public SMVerifyData verify(final String internalID, List<FacilitatorID> FACIDs, ImageData image) {
+    public SMVerifyData verify(List<FacilitatorID> FACIDs, ImageData image) {
         boolean match = false;
         float confidence = 0, cutoff = 0;
         int totalServices = services.size();
@@ -82,6 +82,7 @@ public class ServiceManager {
         List<FRServiceHandlerVerifyResponse> notInConsensus = new ArrayList<FRServiceHandlerVerifyResponse>();
 
         for (FacilitatorID facID : FACIDs) {
+            // TODO: What if the supplied FR service name doesn't exist in our list of services?
             FRServiceHandlerVerifyResponse response =
                 services.get(facID.getFRService()).verify(facID.getFRPersonID(), image);
 
@@ -103,8 +104,7 @@ public class ServiceManager {
         cutoff = cutoff / totalResponded;
         match = consensus && (confidence >= cutoff);
 
-        return new SMVerifyData(internalID,
-                                match,
+        return new SMVerifyData(match,
                                 inConsensus,
                                 notInConsensus,
                                 totalServices,
