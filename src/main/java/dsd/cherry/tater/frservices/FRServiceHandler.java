@@ -58,4 +58,6 @@ public abstract class FRServiceHandler {
     final public void setTimeout(int seconds) {
         timeoutSec = seconds;
     }
+
+    final public int getTimeout() { return timeoutSec; }
 }
