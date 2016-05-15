@@ -14,7 +14,7 @@ public class ImageData {
     private List<ErrorCode> codes;
     private boolean accepted;
 
-    private ImageData() {
+    public ImageData() {
         codes = new ArrayList<ErrorCode>();
         accepted = false;
     }
@@ -25,6 +25,7 @@ public class ImageData {
     public byte[] getImageBinary() {
         return this.image;
     }
+
 
     public void setImageID(String imageID) { this.imageID = imageID; }
     public String getImageID() { return imageID; }
