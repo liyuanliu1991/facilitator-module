@@ -1,5 +1,6 @@
 package dsd.cherry.tater.frservices;
 
+import com.sun.istack.internal.Nullable;
 import dsd.cherry.tater.types.ImageData;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public abstract class FRServiceHandler {
      * @return A collection of values indicating the results of training. See the FRServiceHandlerTrainResponse type
      *          definition and its member variable type definitions for further information.
      */
-    abstract public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images);
+    abstract public FRServiceHandlerTrainResponse train(@Nullable String userID, List<ImageData> images);
 
     /**
      *
