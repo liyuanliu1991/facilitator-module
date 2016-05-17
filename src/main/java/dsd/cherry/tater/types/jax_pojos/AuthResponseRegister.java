@@ -28,6 +28,8 @@ public class AuthResponseRegister {
 
     @JsonIgnore
     public void setFACIDs(List<FacilitatorID> FACIDs) { this.FACIDs = FACIDs; }
+    @JsonIgnore
+    public void addFACID(FacilitatorID FACID) { this.FACIDs.add(FACID); }
     @JsonProperty("facilitatorIds")
     public List<FacilitatorID> getFACIDs() { return FACIDs; }
 

@@ -7,6 +7,11 @@ import javax.xml.bind.DatatypeConverter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dsd.cherry.tater.frservices.FRFacePP;
+import dsd.cherry.tater.frservices.FRServiceHandlerTrainResponse;
+import org.json.JSONObject;
+
 import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
 import dsd.cherry.tater.types.jax_pojos.AuthRequestRegister;
@@ -14,13 +19,14 @@ import dsd.cherry.tater.types.jax_pojos.AuthRequestLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
  * The FacilitatorService exposes the Facilitator API as a RESTful web service for use by the Authentication Server.
  *
  * @author Andrew James Beach
- * @version 0.5
+ * @version 0.7
  * Created by James Beach on 4/27/2016.
  */
 @Path("")
@@ -31,6 +37,9 @@ public class FacilitatorService {
     public FacilitatorService() {
         mapper = new ObjectMapper();
         services = new ServiceManager(10);
+        services.addService(new FRFacePP("30f10080215674ebed72c18753e6a830",
+                                            "CBtHB1BdopXQsDClTl6f2F9r4rquPOTk",
+                                            5));
     }
 
     /**
@@ -62,6 +71,7 @@ public class FacilitatorService {
         SMTrainData result = services.train(null, null, req.getImages());
         AuthResponseRegister reply = new AuthResponseRegister();
         reply.setTrainingStatus(result.getTrainingStatus());
+        reply.setFACIDs(result.getFacIDs());
         reply.setHTTPCode(Response.Status.OK);
 
         for (ImageData img : result.getImageData()) {

@@ -1,7 +1,5 @@
 package dsd.cherry.tater.types;
 
-import dsd.cherry.tater.frservices.FRServiceHandlerTrainResponse;
-
 import java.util.List;
 
 /**
@@ -9,17 +7,17 @@ import java.util.List;
  */
 public class SMTrainData {
     private String internalID;
-    private List<FRServiceHandlerTrainResponse> responses;
+    private List<FacilitatorID> facIDs;
     private List<ImageData> images;
     private boolean isTrained;
 
     public SMTrainData(String internalID,
                        boolean isTrained,
-                       List<FRServiceHandlerTrainResponse> responses,
+                       List<FacilitatorID> facIDs,
                        List<ImageData> images) {
         this.internalID = internalID;
         this.isTrained = isTrained;
-        this.responses = responses;
+        this.facIDs = facIDs;
         this.images = images;
     }
 
@@ -29,5 +27,5 @@ public class SMTrainData {
 
     public List<ImageData> getImageData() { return images; }
 
-    public List<FRServiceHandlerTrainResponse> getResponses() { return responses; }
+    public List<FacilitatorID> getFacIDs() { return facIDs; }
 }

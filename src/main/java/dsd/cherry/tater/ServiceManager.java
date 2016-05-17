@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
+ * @author Andrew James Beach
+ * @version 0.8
  * Created by James Beach on 4/30/2016.
  */
 class ServiceManager {
@@ -45,6 +48,7 @@ class ServiceManager {
         }
 
         List<FRServiceHandlerTrainResponse> responses = new ArrayList<>();
+        List<FacilitatorID> facIDs = new ArrayList<>();
 
         // for each supported service
         for (Map.Entry<String,FRServiceHandler> s : services.entrySet()) {
@@ -60,17 +64,23 @@ class ServiceManager {
                 response = s.getValue().train(internalID, images);
             }
             responses.add(response);
+            if (response.getTrainingStatus()) {
+                FacilitatorID id = new FacilitatorID();
+                id.setFRPersonID(response.getFRPersonID());
+                id.setFRService(response.getServiceName());
+                facIDs.add(id);
+            }
         }
 
         if (responses.isEmpty()) {
-            return new SMTrainData(internalID, trained = false, responses, images);
+            return new SMTrainData(internalID, trained = false, facIDs, images);
         }
 
         for (FRServiceHandlerTrainResponse r : responses) {
             trained = trained && r.getTrainingStatus();
         }
 
-        return new SMTrainData(internalID, trained, responses, images);
+        return new SMTrainData(internalID, trained, facIDs, images);
     }
 
     SMVerifyData verify(List<FacilitatorID> FACIDs, ImageData image) {

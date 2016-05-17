@@ -1,8 +1,8 @@
 package dsd.cherry.tater.frservices;
 
-import com.sun.istack.internal.Nullable;
 import dsd.cherry.tater.types.ImageData;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**

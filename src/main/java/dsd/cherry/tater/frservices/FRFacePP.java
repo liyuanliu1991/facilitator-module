@@ -12,10 +12,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Handles communication with the Face++ facial recognition service, using the Face++ SDK to do so. Extends the
+ * FRServiceHandler class so it can be accessed in a standard way.
+ *
+ * @author Andrew James Beach
+ * @version 0.9
  * Created by James Beach on 5/14/2016.
  */
 public class FRFacePP extends FRServiceHandler {
@@ -37,82 +44,87 @@ public class FRFacePP extends FRServiceHandler {
                 personCreated       = false,
                 trainSuccess        = false,
                 serviceResponded    = true;
+        int nPhotosAccepted = 0;
         PostParameters param;
         ArrayList<String> faceIDs; // must be an array list because PostParameters expects it
+        String facID = "";
         // Detect faces
         param = new PostParameters();
         faceIDs = new ArrayList<>();
         for (ImageData img : images) {
             String id = detectFace(img);
             if (id != null) {
-                imagesAccepted = true;
+                ++nPhotosAccepted;
                 faceIDs.add(id);
             }
         }
 
-        // Create person
-        String facID = "";
-        param = new PostParameters();
-        param.setFaceId(faceIDs);
-        try {
-            JSONObject rst = httpRequests.personCreate(param);
-            facID = rst.getString("person_id");
-            System.out.println("Person ID: " + facID);
-            personCreated = true;
-        } catch (FaceppParseException e) {
-            System.err.println("Error creating person: " + e.getMessage());
-            FaceppCode code = FaceppCode.valueOf(e.getErrorMessage());
+        imagesAccepted = nPhotosAccepted >= TRAINING_PHOTOS_MINIMUM;
 
-            switch (code) {
-                default:
-                    System.err.println("Unhandled error.");
-            }
-        } catch (JSONException e) {
-            System.err.println("Error getting personID from JSON response: " + e.getMessage());
-            e.printStackTrace();
-        }
+        if (imagesAccepted) {
 
-        // Train person for verification
-        if (imagesAccepted && personCreated) {
+            // Create person
             param = new PostParameters();
-            param.setPersonId(facID);
+            param.setFaceId(faceIDs);
             try {
-                // start training
-                JSONObject rst = httpRequests.trainVerify(param);
-                String session = rst.getString("session_id");
-                System.out.println("Got training session ID: " + session);
-
-                // get results
-                System.out.println("Await training results...");
-                // check every so often for a result for as long as the timeout will allow
-                int nTimes = (getTimeout() * 1000) / REQ_DELAY_MILLISECONDS;
-                for (int i = 0; i < nTimes; ++i) {
-                    int res = trainGetResults(session);
-                    if (res == 1) {
-                        trainSuccess = true;
-                        break;
-                    }
-                    else if (res == -1) {
-                        System.out.println("Training failed. No response?");
-                        serviceResponded = false;
-                        break;
-                    }
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(REQ_DELAY_MILLISECONDS);
-                    } catch (InterruptedException e) {
-                        System.err.println("Sleep interrupted: " + e.getMessage());
-                    }
-                }
+                JSONObject rst = httpRequests.personCreate(param);
+                facID = rst.getString("person_id");
+                System.out.println("Person ID: " + facID);
+                personCreated = true;
             } catch (FaceppParseException e) {
-                System.err.println("Error training person: " + e.getMessage());
-            } catch (JSONException e) {
-                System.err.println("Error reading JSON response: " + e.getMessage());
-            }
-        }
+                System.err.println("Error creating person: " + e.getMessage());
+                FaceppCode code = FaceppCode.valueOf(e.getErrorMessage());
 
-        // Delete person if training failed
-        if (personCreated && !trainSuccess) {
-            personDelete(facID);
+                switch (code) {
+                    default:
+                        System.err.println("Unhandled error.");
+                }
+            } catch (JSONException e) {
+                System.err.println("Error getting personID from JSON response: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            // Train person for verification
+            if (imagesAccepted && personCreated) {
+                param = new PostParameters();
+                param.setPersonId(facID);
+                try {
+                    // start training
+                    JSONObject rst = httpRequests.trainVerify(param);
+                    String session = rst.getString("session_id");
+                    System.out.println("Got training session ID: " + session);
+
+                    // get results
+                    System.out.println("Await training results...");
+                    // check every so often for a result for as long as the timeout will allow
+                    int nTimes = (getTimeout() * 1000) / REQ_DELAY_MILLISECONDS;
+                    for (int i = 0; i < nTimes; ++i) {
+                        int res = trainGetResults(session);
+                        if (res == 1) {
+                            trainSuccess = true;
+                            break;
+                        } else if (res == -1) {
+                            System.out.println("Training failed. No response?");
+                            serviceResponded = false;
+                            break;
+                        }
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(REQ_DELAY_MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            System.err.println("Sleep interrupted: " + e.getMessage());
+                        }
+                    }
+                } catch (FaceppParseException e) {
+                    System.err.println("Error training person: " + e.getMessage());
+                } catch (JSONException e) {
+                    System.err.println("Error reading JSON response: " + e.getMessage());
+                }
+            }
+
+            // Delete person if training failed
+            if (personCreated && !trainSuccess) {
+                personDelete(facID);
+            }
         }
 
         return new FRServiceHandlerTrainResponse(
@@ -191,7 +203,7 @@ public class FRFacePP extends FRServiceHandler {
         } catch (FaceppParseException e) {
             System.err.println("Error detecting face: " + e.getMessage());
             try {
-                FaceppCode code = FaceppCode.valueOf(e.getErrorMessage());
+                FaceppCode code = FaceppCode.fromErrorCode(e.getErrorCode());
                 switch (code) {
                     case IMAGE_ERROR_UNSUPPORTED_FORMAT:
                         System.err.println("Marking image as being in an unsupported format.");
@@ -287,9 +299,22 @@ public class FRFacePP extends FRServiceHandler {
 
         int errorCode, httpCode;
 
+        private static Map<Integer, FaceppCode> ECmap = new HashMap<>();
+        private static Map<Integer, FaceppCode> HTTPmap = new HashMap<>();
+
+        static {
+            for (FaceppCode fppc : FaceppCode.values()) {
+                ECmap.put(fppc.errorCode, fppc);
+                HTTPmap.put(fppc.httpCode, fppc);
+            }
+        }
+
         FaceppCode(int errorCode, int httpCode) {
             this.errorCode = errorCode;
             this.httpCode = httpCode;
         }
+
+        public static FaceppCode fromErrorCode(int code) { return ECmap.get(code); }
+        public static FaceppCode fromHTTPCode(int code) { return HTTPmap.get(code); }
     }
 }

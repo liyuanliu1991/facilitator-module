@@ -33,7 +33,7 @@ public class FaceppTrainTest extends TestCase {
 
         try {
             int i = 0;
-            int limit = 500;
+            int limit = 3;
             for (File f : trainPics.listFiles()) {
                 byte[] fbyte = new byte[(int) f.length()];
                 FileInputStream fin = new FileInputStream(f);
