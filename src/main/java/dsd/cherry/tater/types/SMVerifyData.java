@@ -11,7 +11,7 @@ public class SMVerifyData {
     private List<FRServiceHandlerVerifyResponse> inConsensus;
     private List<FRServiceHandlerVerifyResponse> notInConsensus;
     private int     totalServices,  totalResponded;
-    private float   confidence,     cutoff;
+    private double  confidence,     cutoff;
     private boolean match,          consensus;
 
     public SMVerifyData(boolean                                 match,
@@ -19,8 +19,8 @@ public class SMVerifyData {
                         List<FRServiceHandlerVerifyResponse>    notInConsensus,
                         int                                     totalServices,
                         int                                     totalResponded,
-                        float                                   confidence,
-                        float                                   cutoff,
+                        double                                  confidence,
+                        double                                  cutoff,
                         boolean                                 consensus) {
         this.inConsensus = inConsensus;
         this.totalServices = totalServices;
@@ -41,9 +41,9 @@ public class SMVerifyData {
 
     public int getTotalResponsed() { return totalResponded; }
 
-    public float getConfidence() { return confidence; }
+    public double getConfidence() { return confidence; }
 
-    public float getCutoff() { return cutoff; }
+    public double getCutoff() { return cutoff; }
 
     public boolean isConsensus() { return consensus; }
 }

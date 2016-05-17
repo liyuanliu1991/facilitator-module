@@ -32,6 +32,8 @@ public class FaceppTrainTest extends TestCase {
         File trainPics = new File("src/test/resources/testpics/obama_train");
 
         try {
+            int i = 0;
+            int limit = 500;
             for (File f : trainPics.listFiles()) {
                 byte[] fbyte = new byte[(int) f.length()];
                 FileInputStream fin = new FileInputStream(f);
@@ -41,6 +43,8 @@ public class FaceppTrainTest extends TestCase {
                 img.setImageBinary(fbyte);
                 img.setImageID(f.getName());
                 lst.add(img);
+                ++i;
+                if (i >= limit) break;
             }
         } catch (NullPointerException e) {
             System.out.println("Obamapics directory is null!");
@@ -60,6 +64,32 @@ public class FaceppTrainTest extends TestCase {
             }
         }
         System.out.println("==========================");
+
+        ImageData verifyImg = new ImageData();
+        {
+            File verifyPic = new File("src/test/resources/testpics/obama_verify/0.jpg");
+            byte[] fbyte = new byte[(int) verifyPic.length()];
+            FileInputStream fin = new FileInputStream(verifyPic);
+            fin.read(fbyte);
+            fin.close();
+            verifyImg.setImageBinary(fbyte);
+            verifyImg.setImageID(verifyPic.getName());
+        }
+
+        FRServiceHandlerVerifyResponse vResponse = fpp.verify(response.getFRPersonID(), verifyImg);
+        System.out.println("======VERIFY RESULTS======");
+        System.out.println("Service Name: " + vResponse.getServiceName());
+        System.out.println("Service Responded: " + vResponse.getServiceResponded());
+        System.out.println("Person ID: " + vResponse.getFRPersonID());
+        System.out.println("Confidence: " + vResponse.getConfidence());
+        System.out.println("Cutoff: " + vResponse.getCutoff());
+        System.out.println("Image:");
+        System.out.println("    Image ID: " + verifyImg.getImageID());
+        for (ErrorCode c : verifyImg.getCodes()) {
+            System.out.println("        Error: " + c.getMessage());
+        }
+        System.out.println("==========================");
+
 
         fpp.personDelete(response.getFRPersonID());
     }

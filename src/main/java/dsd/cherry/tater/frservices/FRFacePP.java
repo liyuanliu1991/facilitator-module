@@ -1,11 +1,12 @@
 package dsd.cherry.tater.frservices;
 
+import dsd.cherry.tater.types.ErrorCodes;
+import dsd.cherry.tater.types.ImageData;
+
 import com.facepp.error.FaceppParseException;
 import com.facepp.http.HttpRequests;
 import com.facepp.http.PostParameters;
 
-import dsd.cherry.tater.types.ErrorCodes;
-import dsd.cherry.tater.types.ImageData;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,10 +19,12 @@ import java.util.concurrent.TimeUnit;
  * Created by James Beach on 5/14/2016.
  */
 public class FRFacePP extends FRServiceHandler {
-    private final String serviceName = "facepp";
+    private final static String SERVICE_NAME = "facepp";
+    private final static int REQ_DELAY_MILLISECONDS = 300;
+    private final static int TRAINING_PHOTOS_MINIMUM = 5;
+    private final static double CUTOFF = 0.9;
     private HttpRequests httpRequests;
     private boolean useChina, noHTTPS;
-    private final int REQ_DELAY_MILLISECONDS = 300;
 
     public FRFacePP(String api_key, String api_secret, int timeoutSeconds) {
         httpRequests = new HttpRequests(api_key, api_secret, useChina, noHTTPS);
@@ -40,47 +43,10 @@ public class FRFacePP extends FRServiceHandler {
         param = new PostParameters();
         faceIDs = new ArrayList<>();
         for (ImageData img : images) {
-            param.setImg(img.getImageBinary());
-            JSONObject rst;
-            try {
-                rst = httpRequests.detectionDetect(param);
-                // It's in an array called "face" because it's stupid
-                JSONArray elements = rst.getJSONArray("face");
-                // Don't assume order is guaranteed, find "face_id" field
-                for (int i = 0; i < elements.length(); ++i) {
-                    JSONObject obj = elements.getJSONObject(i);
-                    if (obj.has("face_id")) {
-                        String id = obj.getString("face_id");
-                        System.out.println("Face ID: " + id);
-                        faceIDs.add(id);
-                        break;
-                    }
-                }
+            String id = detectFace(img);
+            if (id != null) {
                 imagesAccepted = true;
-            } catch (FaceppParseException e) {
-                System.err.println("Error detecting face: " + e.getMessage());
-                try {
-                    FaceppCode code = FaceppCode.valueOf(e.getErrorMessage());
-                    switch (code) {
-                        case IMAGE_ERROR_UNSUPPORTED_FORMAT:
-                            System.err.println("Marking image as being in an unsupported format.");
-                            img.addCode(ErrorCodes.IMAGE_ERROR_UNSUPPORTED_FORMAT);
-                            break;
-                        case IMAGE_ERROR_FILE_TOO_LARGE:
-                            System.err.println("Marking image as being too large.");
-                            img.addCode(ErrorCodes.IMAGE_ERROR_FILE_TOO_LARGE);
-                            break;
-                        default:
-                            System.err.println("Unhandled error.");
-                    }
-                } catch (NullPointerException f) {
-                    System.err.println("Error getting Facepp Code: " + f.getMessage());
-                    System.err.println("Marking image as having an unknown problem.");
-                    img.addCode(ErrorCodes.IMAGE_ERROR_UNKNOWN);
-                }
-            } catch (JSONException e) {
-                System.err.println("Error getting faceID: " + e.getMessage());
-                e.printStackTrace();
+                faceIDs.add(id);
             }
         }
 
@@ -160,16 +126,96 @@ public class FRFacePP extends FRServiceHandler {
 
     @Override
     public FRServiceHandlerVerifyResponse verify(String personID, ImageData image) {
-        return null;
+        PostParameters param = new PostParameters();
+        double confidence = 0;
+        boolean isSamePerson = false;
+        String sessionId;
+        boolean faceDetected, serviceResponded = false;
+
+        String faceID = detectFace(image);
+        faceDetected = faceID != null;
+
+        if (faceDetected) {
+            param.setPersonId(personID);
+            param.setFaceId(faceID);
+            try {
+                JSONObject rst = httpRequests.recognitionVerify(param);
+                serviceResponded = true;
+                confidence = rst.getDouble("confidence") / 100;
+                isSamePerson = rst.getBoolean("is_same_person");
+                sessionId = rst.getString("session_id");
+            } catch (FaceppParseException e) {
+                System.err.println("Error verifying face: " + e.getMessage());
+            } catch (JSONException e) {
+                System.err.println("Error reading JSON response: " + e.getMessage());
+            }
+
+
+        }
+
+        return new FRServiceHandlerVerifyResponse(
+                getFRServiceName(),
+                serviceResponded,
+                confidence,
+                getFRServiceCutoff(),
+                personID
+        );
     }
 
     @Override
     public String getFRServiceName() {
-        return serviceName;
+        return SERVICE_NAME;
     }
 
     @Override
-    public float getFRServiceCutoff() { return 1; }
+    public double getFRServiceCutoff() { return CUTOFF; }
+
+    private String detectFace(ImageData img) {
+        String faceID = null;
+        PostParameters param = new PostParameters();
+        param.setImg(img.getImageBinary());
+        JSONObject rst;
+        try {
+            rst = httpRequests.detectionDetect(param);
+            // It's in an array called "face" because it's stupid
+            JSONArray elements = rst.getJSONArray("face");
+            // Don't assume order is guaranteed, find "face_id" field
+            for (int i = 0; i < elements.length(); ++i) {
+                JSONObject obj = elements.getJSONObject(i);
+                if (obj.has("face_id")) {
+                    faceID = obj.getString("face_id");
+                    System.out.println("Face ID: " + faceID);
+                    break;
+                }
+            }
+        } catch (FaceppParseException e) {
+            System.err.println("Error detecting face: " + e.getMessage());
+            try {
+                FaceppCode code = FaceppCode.valueOf(e.getErrorMessage());
+                switch (code) {
+                    case IMAGE_ERROR_UNSUPPORTED_FORMAT:
+                        System.err.println("Marking image as being in an unsupported format.");
+                        img.addCode(ErrorCodes.IMAGE_ERROR_UNSUPPORTED_FORMAT);
+                        break;
+                    case IMAGE_ERROR_FILE_TOO_LARGE:
+                        System.err.println("Marking image as being too large.");
+                        img.addCode(ErrorCodes.IMAGE_ERROR_FILE_TOO_LARGE);
+                        break;
+                    default:
+                        System.err.println("Unhandled error.");
+                }
+            } catch (NullPointerException f) {
+                System.err.println("Error getting Facepp Code: " + f.getMessage());
+                System.err.println("Marking image as having an unknown problem.");
+                img.addCode(ErrorCodes.IMAGE_ERROR_UNKNOWN);
+            }
+        } catch (JSONException e) {
+            System.err.println("Error getting faceID: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return faceID;
+    }
 
     private int trainGetResults(String sessionID) {
         System.out.println("Checking on training session status.");
@@ -194,13 +240,13 @@ public class FRFacePP extends FRServiceHandler {
         return -1;
     }
 
-    public int personDelete(String facID) {
-        if (facID != null && !facID.equals("")) {
+    public int personDelete(String personID) {
+        if (personID != null && !personID.equals("")) {
             PostParameters param = new PostParameters();
-            System.out.print("Attempting to delete person with ID " + facID + "...");
+            System.out.print("Attempting to delete person with ID " + personID + "...");
             try {
                 param = new PostParameters();
-                param.setPersonId(facID);
+                param.setPersonId(personID);
                 JSONObject rst = httpRequests.personDelete(param);
                 if (rst.getInt("deleted") >= 1) {
                     System.out.println("succeeded.");
@@ -234,6 +280,7 @@ public class FRFacePP extends FRServiceHandler {
         IMAGE_ERROR_FAILED_TO_DOWNLOAD                  (1302, 432),
         IMAGE_ERROR_FILE_TOO_LARGE                      (1303, 433),
         IMAGE_ERROR                                     (1304, 434),
+        OBJECT_UNTRAINED                                (1401, 441),
         BAD_NAME                                        (1501, 451),
         BAD_TAG                                         (1502, 452),
         NAME_EXIST                                      (1503, 453);

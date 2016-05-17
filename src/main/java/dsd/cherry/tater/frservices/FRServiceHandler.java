@@ -54,7 +54,7 @@ public abstract class FRServiceHandler {
      * @return The confidence value cutoff below which a confidence value returned by verify() should not constitute a
      *          match.
      */
-    abstract public float getFRServiceCutoff();
+    abstract public double getFRServiceCutoff();
 
     final public void setTimeout(int seconds) {
         timeoutSec = seconds;

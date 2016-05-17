@@ -6,7 +6,8 @@ package dsd.cherry.tater.frservices;
 public class FRServiceHandlerVerifyResponse {
     private String serviceName;
     private boolean serviceResponded;
-    private float confidence, cutoff;
+    private double confidence;
+    private double cutoff;
     private String FRPersonID;
 
     /**
@@ -22,8 +23,8 @@ public class FRServiceHandlerVerifyResponse {
      */
     protected FRServiceHandlerVerifyResponse(String serviceName,
                                              boolean serviceResponded,
-                                             float confidence,
-                                             float cutoff,
+                                             double confidence,
+                                             double cutoff,
                                              String FRPersonID) {
         this.serviceName = serviceName;
         this.serviceResponded = serviceResponded;
@@ -36,9 +37,9 @@ public class FRServiceHandlerVerifyResponse {
 
     public boolean getServiceResponded() { return serviceResponded; }
 
-    public float getConfidence() { return confidence; }
+    public double getConfidence() { return confidence; }
 
-    public float getCutoff() { return cutoff; }
+    public double getCutoff() { return cutoff; }
 
     public String getFRPersonID() { return FRPersonID; }
 }

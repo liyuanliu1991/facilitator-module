@@ -36,7 +36,7 @@ class ServiceManager {
     SMTrainData train(final String internalID, List<FacilitatorID> FACIDs, List<ImageData> images) {
         boolean trained = true;
 
-        Map<String,String> FRPersonIDs = new HashMap<>();
+        Map<String, String> FRPersonIDs = new HashMap<>();
 
         if (FACIDs != null) {
             for (FacilitatorID f : FACIDs) {
@@ -75,7 +75,7 @@ class ServiceManager {
 
     SMVerifyData verify(List<FacilitatorID> FACIDs, ImageData image) {
         boolean match;
-        float confidence = 0, cutoff = 0;
+        double confidence = 0, cutoff = 0;
         int totalServices = services.size();
         int totalResponded = 0;
         boolean consensus = true;

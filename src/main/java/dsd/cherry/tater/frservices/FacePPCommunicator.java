@@ -8,7 +8,6 @@
  */
 package dsd.cherry.tater.frservices;
 
-import dsd.cherry.tater.frservices.FRServiceHandlerTrainResponse;
 import dsd.cherry.tater.types.ImageData;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,8 +20,6 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.Iterator;
-
-import dsd.cherry.tater.frservices.FRServiceHandler;
 
 
 /**
@@ -530,7 +527,7 @@ public class FacePPCommunicator extends FRServiceHandler {
         return "facepp";
     }
 
-    public float getFRServiceCutoff(){
+    public double getFRServiceCutoff(){
         return 80;
     }
     public static void main(String[] args) {
