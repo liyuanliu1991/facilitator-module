@@ -4,15 +4,15 @@ import dsd.cherry.tater.types.ErrorCode;
 import dsd.cherry.tater.types.ImageData;
 import junit.framework.TestCase;
 
-import javax.validation.constraints.Null;
-import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
+ * @author Andrew James Beach
+ * @version 1.0
  * Created by James Beach on 5/14/2016.
  */
 public class FaceppTrainTest extends TestCase {
@@ -33,7 +33,7 @@ public class FaceppTrainTest extends TestCase {
 
         try {
             int i = 0;
-            int limit = 3;
+            int limit = 4;
             for (File f : trainPics.listFiles()) {
                 byte[] fbyte = new byte[(int) f.length()];
                 FileInputStream fin = new FileInputStream(f);

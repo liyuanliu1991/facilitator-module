@@ -40,7 +40,7 @@ public class FRFacePP extends FRServiceHandler {
 
     @Override
     public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images) {
-        boolean imagesAccepted      = false,
+        boolean imagesAccepted,
                 personCreated       = false,
                 trainSuccess        = false,
                 serviceResponded    = true;
@@ -85,7 +85,7 @@ public class FRFacePP extends FRServiceHandler {
             }
 
             // Train person for verification
-            if (imagesAccepted && personCreated) {
+            if (personCreated) {
                 param = new PostParameters();
                 param.setPersonId(facID);
                 try {
