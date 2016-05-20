@@ -25,7 +25,9 @@ import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
 import java.io.IOException;
 
 /**
- * The FacilitatorService exposes the Facilitator API as a RESTful web service for use by the Authentication Server.
+ * Exposes the public API of the Tater web service. Tater is modeled after the requirements set forth for the
+ * Distributed Software Development 2016 exercise. It supports the training of facial identities and the subsequent
+ * verification of photographs against those identities using one or more facial recognition services.
  *
  * @author Andrew James Beach
  * @version 0.7
@@ -46,9 +48,10 @@ public class FacilitatorService {
     }
 
     /**
-     * Exposes a training function through which the Authentication Server can commence the training of facial
-     * recognition services and at the same time get the training status of those services.
-     * @param JSON A JSON training request from the Authentication Server.
+     * Exposes a training function through which a client can supply a set of photographs of faces to create a new
+     * identity with one or more supported facial recognition services. This identity can later be used to verify
+     * whether a different photograph is of a face that matches the one in the original photos used for training.
+     * @param JSON A JSON training request from a client.
      * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specification and the
      *            definition for the AuthResponseRegister object.
      */
@@ -57,9 +60,11 @@ public class FacilitatorService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response train(String JSON) {
+        // set it up so images are mapped correctly
         ObjectMapper mapIn = this.mapper.copy();
         mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
-        AuthRequestRegister req;
+
+        AuthRequestRegister req; // JSON data will be marshaled to this POJO
         try {
             req = mapIn.readValue(JSON, AuthRequestRegister.class);
         } catch (IOException e) {
@@ -91,9 +96,9 @@ public class FacilitatorService {
     }
 
     /**
-     * Exposes a verification function through which the Authentication Server can attempt to verify a photo of a face
-     * against a person's ID.
-     * @param JSON A JSON verification request from the Authentication Server.
+     * Exposes a verification function through which a client can attempt to verify a photograph of a face against a
+     * previously-trained identity.
+     * @param JSON A JSON request for verification.
      * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specifcation and the
      *            definition for the AuthResponseLogin object.
      */
