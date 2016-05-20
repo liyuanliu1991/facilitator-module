@@ -117,7 +117,7 @@ public class FacilitatorService {
                 + contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
                 + (contextReq.getRemoteAddr().equals(contextReq.getLocalAddr()) ?
                 " (The call is coming from inside the house.)" :
-                " (The call is coming from outside the house."));
+                " (The call is coming from outside the house.)"));
         System.out.println("ImageId: " + req.getImage().getImageID());
         System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage()
                                                                               .getImageBinary()).substring(0,32) + "...");
