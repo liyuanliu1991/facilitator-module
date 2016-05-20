@@ -11,12 +11,12 @@ import java.util.List;
  * Created by James Beach on 5/3/2016.
  */
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
-public class AuthResponseLogin {
+public class ClientResponseVerify {
     private boolean match;
     private List<ErrorCodes> codes;
     private int HTTPStatusCode;
 
-    public AuthResponseLogin() {
+    public ClientResponseVerify() {
         codes = new ArrayList<ErrorCodes>();
     }
 

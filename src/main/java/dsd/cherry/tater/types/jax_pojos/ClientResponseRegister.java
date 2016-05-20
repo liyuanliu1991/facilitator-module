@@ -13,13 +13,13 @@ import java.util.List;
 /**
  * Created by James Beach on 5/2/2016.
  */
-public class AuthResponseRegister {
+public class ClientResponseRegister {
     private List<FacilitatorID> FACIDs;
     private List<ErrorCode> codes;
     private boolean isTrained;
     private Response.Status HTTPCode;
 
-    public AuthResponseRegister() {
+    public ClientResponseRegister() {
         FACIDs = new ArrayList<>();
         codes = new ArrayList<>();
         isTrained = false;

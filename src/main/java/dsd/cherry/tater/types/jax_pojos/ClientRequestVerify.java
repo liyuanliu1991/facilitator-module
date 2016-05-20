@@ -11,13 +11,13 @@ import java.util.List;
 /**
  * Created by James Beach on 4/29/2016.
  */
-public class AuthRequestLogin {
+public class ClientRequestVerify {
     @NotNull
     private ImageData image;
     @NotNull
     private List<FacilitatorID> FACIDs;
 
-    public AuthRequestLogin() {}
+    public ClientRequestVerify() {}
 
     @JsonProperty("picture")
     public void setImage(ImageData image) { this.image = image; }

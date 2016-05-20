@@ -11,7 +11,7 @@ import java.util.List;
  * Created by James Beach on 4/29/2016.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AuthRequestRegister {
+public class ClientRequestRegister {
     private List<ImageData> images;
 
     @JsonProperty("pictures")
