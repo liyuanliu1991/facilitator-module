@@ -1,6 +1,9 @@
 package dsd.cherry.tater;
 
+// import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.DatatypeConverter;
@@ -19,7 +22,6 @@ import dsd.cherry.tater.types.jax_pojos.AuthRequestLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseLogin;
 import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -31,6 +33,7 @@ import java.io.IOException;
  */
 @Path("")
 public class FacilitatorService {
+    @Context private HttpServletRequest contextReq;
     private ObjectMapper mapper;
     private ServiceManager services;
 
@@ -109,8 +112,15 @@ public class FacilitatorService {
             e.printStackTrace();
             return Response.status(400).entity("Error reading JSON request.").build();
         }
+
+        System.out.println("Request from "
+                + contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
+                + (contextReq.getRemoteAddr().equals(contextReq.getLocalAddr()) ?
+                " (The call is coming from inside the house.)" :
+                " (The call is coming from outside the house."));
         System.out.println("ImageId: " + req.getImage().getImageID());
-        System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage().getImageBinary()));
+        System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage()
+                                                                              .getImageBinary()).substring(0,32) + "...");
 
         SMVerifyData result = services.verify(req.getFACIDs(), req.getImage());
         AuthResponseLogin reply = new AuthResponseLogin();
