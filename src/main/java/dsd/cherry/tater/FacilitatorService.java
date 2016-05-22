@@ -1,6 +1,5 @@
 package dsd.cherry.tater;
 
-// import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -67,9 +66,23 @@ public class FacilitatorService {
         ObjectMapper map = this.mapper.copy();
         map.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
 
-        ClientRequestRegister req = null; // JSON data will be marshaled to this POJO
+        ClientRequestRegister req; // JSON data will be marshaled to this POJO
+
         try {
             req = map.readValue(JSON, ClientRequestRegister.class);
+
+            // validate request
+
+
+            // train the services and put the results in the reply
+            SMTrainData result;
+            result = services.train(null, null, req.getImages());
+            reply.setTrainingStatus(result.getTrainingStatus());
+            reply.setFACIDs(result.getFacIDs());
+            reply.setHTTPCode(Response.Status.OK);
+            for (ImageData img : result.getImageData()) {
+                reply.addCodes(img.getCodes());
+            }
         } catch (IOException e) {
             System.out.println("Error reading JSON Train Request: " + e.getMessage());
             reply.addFACID(null);
@@ -80,16 +93,6 @@ public class FacilitatorService {
 
 
         // train the services and put the results in the reply
-        if (req != null) {
-            SMTrainData result;
-            result = services.train(null, null, req.getImages());
-            reply.setTrainingStatus(result.getTrainingStatus());
-            reply.setFACIDs(result.getFacIDs());
-            reply.setHTTPCode(Response.Status.OK);
-            for (ImageData img : result.getImageData()) {
-                reply.addCodes(img.getCodes());
-            }
-        }
 
         try {
             return Response.status(statusCode).entity(map.writeValueAsString(reply)).build();
