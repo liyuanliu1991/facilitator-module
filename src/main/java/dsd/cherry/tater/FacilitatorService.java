@@ -6,20 +6,21 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.DatatypeConverter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dsd.cherry.tater.frservices.FRFacePP;
+import dsd.cherry.tater.frservices.FRServiceHandlerTrainResponse;
+import org.json.JSONObject;
 
 import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
-import dsd.cherry.tater.types.jax_pojos.ClientRequestRegister;
-import dsd.cherry.tater.types.jax_pojos.ClientRequestVerify;
-import dsd.cherry.tater.types.jax_pojos.ClientResponseVerify;
-import dsd.cherry.tater.types.jax_pojos.ClientResponseRegister;
+import dsd.cherry.tater.types.jax_pojos.AuthRequestRegister;
+import dsd.cherry.tater.types.jax_pojos.AuthRequestLogin;
+import dsd.cherry.tater.types.jax_pojos.AuthResponseLogin;
+import dsd.cherry.tater.types.jax_pojos.AuthResponseRegister;
 
 import java.io.IOException;
 
@@ -35,7 +36,6 @@ import java.io.IOException;
 @Path("")
 public class FacilitatorService {
     @Context private HttpServletRequest contextReq;
-    @Context private UriInfo  contextUri;
     private ObjectMapper mapper;
     private ServiceManager services;
 
@@ -53,50 +53,45 @@ public class FacilitatorService {
      * whether a different photograph is of a face that matches the one in the original photos used for training.
      * @param JSON A JSON training request from a client.
      * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specification and the
-     *            definition for the ClientResponseRegister object.
+     *            definition for the AuthResponseRegister object.
      */
     @POST
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response train(String JSON) {
-        ClientResponseRegister reply = new ClientResponseRegister(); // this will be the response
-        Response.Status statusCode = Response.Status.OK; // this will be the HTTP response code
-
         // set it up so images are mapped correctly
-        ObjectMapper map = this.mapper.copy();
-        map.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
+        ObjectMapper mapIn = this.mapper.copy();
+        mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
 
-        ClientRequestRegister req = null; // JSON data will be marshaled to this POJO
+        AuthRequestRegister req; // JSON data will be marshaled to this POJO
         try {
-            req = map.readValue(JSON, ClientRequestRegister.class);
+            req = mapIn.readValue(JSON, AuthRequestRegister.class);
         } catch (IOException e) {
             System.out.println("Error reading JSON Train Request: " + e.getMessage());
-            reply.addFACID(null);
-            reply.addCode(ErrorCodes.BAD_JSON_TAG);
+            e.printStackTrace();
+            return Response.status(452).entity("Error reading JSON request.").build();
         }
+        System.out.println(req.getImages().toString());
 
-        // validate request
+        ObjectMapper mapOut = this.mapper.copy();
 
+        SMTrainData result = services.train(null, null, req.getImages());
+        AuthResponseRegister reply = new AuthResponseRegister();
+        reply.setTrainingStatus(result.getTrainingStatus());
+        reply.setFACIDs(result.getFacIDs());
+        reply.setHTTPCode(Response.Status.OK);
 
-        // train the services and put the results in the reply
-        if (req != null) {
-            SMTrainData result;
-            result = services.train(null, null, req.getImages());
-            reply.setTrainingStatus(result.getTrainingStatus());
-            reply.setFACIDs(result.getFacIDs());
-            reply.setHTTPCode(Response.Status.OK);
-            for (ImageData img : result.getImageData()) {
-                reply.addCodes(img.getCodes());
-            }
+        for (ImageData img : result.getImageData()) {
+            reply.addCodes(img.getCodes());
         }
 
         try {
-            return Response.status(statusCode).entity(map.writeValueAsString(reply)).build();
-        } catch (JsonProcessingException f) {
-            statusCode = Response.Status.INTERNAL_SERVER_ERROR;
-            return Response.status(statusCode)
-                    .entity("tater/" + contextUri.getPath() + ": Fatal JSON processing error.").build();
+            return Response.status(reply.getHTTPCode()).entity(mapOut.writeValueAsString(reply)).build();
+        } catch (JsonProcessingException e) {
+            System.out.println("/train: Error producing JSON reply: " + e.getMessage());
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("tater/train: Error producing JSON reply.").build();
         }
     }
 
@@ -104,8 +99,8 @@ public class FacilitatorService {
      * Exposes a verification function through which a client can attempt to verify a photograph of a face against a
      * previously-trained identity.
      * @param JSON A JSON request for verification.
-     * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specification and the
-     *            definition for the ClientResponseVerify object.
+     * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specifcation and the
+     *            definition for the AuthResponseLogin object.
      */
     @POST
     @Path("/login")
@@ -114,9 +109,9 @@ public class FacilitatorService {
     public Response verify(String JSON) {
         ObjectMapper mapIn = this.mapper.copy();
         mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
-        ClientRequestVerify req;
+        AuthRequestLogin req;
         try {
-            req = mapIn.readValue(JSON, ClientRequestVerify.class);
+            req = mapIn.readValue(JSON, AuthRequestLogin.class);
         } catch (IOException e) {
             System.out.println("Error reading JSON Verify Request: " + e.getMessage());
             e.printStackTrace();
@@ -133,7 +128,7 @@ public class FacilitatorService {
                                                                               .getImageBinary()).substring(0,32) + "...");
 
         SMVerifyData result = services.verify(req.getFACIDs(), req.getImage());
-        ClientResponseVerify reply = new ClientResponseVerify();
+        AuthResponseLogin reply = new AuthResponseLogin();
         reply.setHTTPStatusCode(200);
         reply.setMatch(result.isMatch());
 
