@@ -8,6 +8,8 @@
  */
 package dsd.cherry.tater.frservices;
 
+import dsd.cherry.tater.frservices.FRServiceHandlerTrainResponse;
+import dsd.cherry.tater.types.ErrorCodes;
 import dsd.cherry.tater.types.ImageData;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,6 +22,8 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.Iterator;
+
+import dsd.cherry.tater.frservices.FRServiceHandler;
 
 
 /**
@@ -36,6 +40,14 @@ public class FacePPCommunicator extends FRServiceHandler {
     private Boolean useHttp;
     private HttpRequests httpRequests;
     private String groupName;
+    private String busyServer = "SERVER_TOO_BUSY";
+    private String IMAGE_ERROR = "IMAGE_ERROR: ";
+    private String IMAGE_DOWNLOAD_ERROR = "IMAGE_ERROR_FAILED_TO_DOWNLOAD";
+    private String IMAGE_FORMAT_ERROR = "IMAGE_ERROR_UNSUPPORTED_FORMAT";
+    private String IMAGE_FACE_NOT_DETECTED = "IMAGE_ERROR_FACE_NOT_DETECTED";
+    private String IMAGE_FILE_TOO_LARGE = "IMAGE_ERROR_FILE_TOO_LARGE";
+    private String IMAGE_BAD_JSON_TAG = "BAD_TAG";
+    private int MINIMUM_GOOD_FPP_IMAGES = 5;
 
     /**
      * Constructor
@@ -68,6 +80,7 @@ public class FacePPCommunicator extends FRServiceHandler {
             result = httpRequests.detectionDetect(new PostParameters().setUrl(url));
         } catch (FaceppParseException e) {
             e.printStackTrace();
+            return IMAGE_ERROR + e.getMessage();
         }
         System.out.println(result.toString());
         return getFaceId(result);
@@ -87,9 +100,10 @@ public class FacePPCommunicator extends FRServiceHandler {
         }
         catch (FaceppParseException e) {
             e.printStackTrace();
+            return IMAGE_ERROR + e.getMessage();
         }
         System.out.println(result.toString());
-        return result.toString();
+        return getFaceId(result);
     }
 
     /**
@@ -97,45 +111,72 @@ public class FacePPCommunicator extends FRServiceHandler {
      * Again, why can't we extract face_id from the JSONObject this time?
      * Do we need to though?
      */
-     protected String detectFace(byte[] data) {
-         System.out.println("detecting face in FacePP" + "\n");
-         JSONObject result = new JSONObject();
-         try {
-             result = httpRequests.detectionDetect(new PostParameters().setImg(data));
-         }
-         catch (FaceppParseException e) {
-             e.printStackTrace();
-         }
-         System.out.println("result: " + result.toString() + "\n");
-         return result.toString();
-     }
+    protected String detectFace(byte[] data) {
+        System.out.println("detecting face in FacePP" + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.detectionDetect(new PostParameters().setImg(data));
+        }
+        catch (FaceppParseException e) {
+            e.printStackTrace();
+            return IMAGE_ERROR + e.getMessage();
+        }
+        System.out.println("result: " + result.toString() + "\n");
+        return getFaceId(result);
+    }
 
-         /**
-          * Creates a person with the given name and adds them to the existing group.
-          * We want to do this since for each user, only one group will be necessary, and since
-          * each user gets its own instance of FacePPCommunicator, so there shouldn't be any issues
-          * implementing this method this way.
-          */
-          protected String createPersonInGroup(String personName) {
-              System.out.println("Creating person in group on FACEPP: " + personName + "\n");
-              JSONObject result = new JSONObject();
-              try {
-                  result = httpRequests.personCreate(new PostParameters().setPersonName(personName));
-                  System.out.println("result: " + result.toString() +  "\n");
-              }
-              catch (FaceppParseException e) {
-                  e.printStackTrace();
-              }
-              String personID = null;
-              try {
-                  personID = result.getString("person_id");
-              } catch (JSONException e) {
-                  e.printStackTrace();
-              }
-              System.out.println("person ID: " + personID);
-              addPersonToGroup(personID);
-              return personID;
-          }
+    /**
+     * Creates a person with the given name and adds them to the existing group.
+     * We want to do this since for each user, only one group will be necessary, and since
+     * each user gets its own instance of FacePPCommunicator, so there shouldn't be any issues
+     * implementing this method this way.
+     */
+    protected String createPersonInGroup(String personName) {
+        System.out.println("Creating person in group on FACEPP: " + personName + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personCreate(new PostParameters().setPersonName(personName));
+            System.out.println("result: " + result.toString() +  "\n");
+        }
+        catch (FaceppParseException e) {
+            e.printStackTrace();
+        }
+        String personID = null;
+        try {
+            personID = result.getString("person_id");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        System.out.println("person ID: " + personID);
+        addPersonToGroup(personID);
+        return personID;
+    }
+
+    /**
+     * @return: the personID assigned by facepp. This is another way of communicating to facepp who we are dealing with.
+     */
+    protected String createPerson(){
+        System.out.println("Creating person in FACEPP: " + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personCreate(new PostParameters());
+            System.out.println("result: " + result.toString() +  "\n");
+        }
+        catch (FaceppParseException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains(busyServer)){
+                return busyServer;
+            }
+        }
+        String personID = null;
+        try {
+            personID = result.getString("person_id");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        System.out.println("person ID: " + personID);
+        return personID;
+    }
 
     /**
      * @param personName An identifier for a given person. Doesn't have to be their actual name
@@ -143,58 +184,62 @@ public class FacePPCommunicator extends FRServiceHandler {
      * @return: the personID assigned by facepp. This is another way of communicating to facepp who we are dealing with.
      */
     protected String createPerson(String personName){
-              System.out.println("Creating person in group on FACEPP: " + personName + "\n");
-              JSONObject result = new JSONObject();
-              try {
-                  result = httpRequests.personCreate(new PostParameters().setPersonName(personName));
-                  System.out.println("result: " + result.toString() +  "\n");
-              }
-              catch (FaceppParseException e) {
-                  e.printStackTrace();
-              }
-              String personID = null;
-              try {
-                  personID = result.getString("person_id");
-              } catch (JSONException e) {
-                  e.printStackTrace();
-              }
-              System.out.println("person ID: " + personID);
-              return personID;
-          }
+        System.out.println("Creating person in FACEPP: " + personName + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personCreate(new PostParameters().setPersonName(personName));
+            System.out.println("result: " + result.toString() +  "\n");
+        }
+        catch (FaceppParseException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains(busyServer)){
+                return busyServer;
+            }
+        }
+        String personID = null;
+        try {
+            personID = result.getString("person_id");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-          /**
-           * Removes a person from the group using the person's name.
-           * Keith used personDelete(). I wonder if this does the same thing, since
-           * when he adds a person, he adds that person to the group using groupAddPerson. Tbe question is,
-           * does one need to use both personDelete() and groupRemovePerson() or just one?
-           */
-          protected String removePersonFromGroup(String personID) {
-          System.out.println("Removing person from group: " + personID + "\n");
-          JSONObject result = new JSONObject();
-          try {
-              result = httpRequests.groupRemovePerson(new PostParameters().setGroupName(groupName).setPersonId(personID));
-          }
-          catch (FaceppParseException e) {
-              e.printStackTrace();
-          }
-          System.out.println("result: " + result.toString() + "\n");
-          return result.toString();
-          }
+        System.out.println("person ID: " + personID);
+        return personID;
+    }
 
-          protected String removePerson(String personID){
-              System.out.println("Removing person: " + personID + "\n");
-              JSONObject result = new JSONObject();
-              try {
-                  result = httpRequests.personDelete(new PostParameters().setPersonId(personID));
-              }
-              catch (FaceppParseException e) {
-                  e.printStackTrace();
-              }
-              System.out.println("result: " + result.toString() + "\n");
-              return result.toString();
-          }
+    /**
+     * Removes a person from the group using the person's name.
+     * Keith used personDelete(). I wonder if this does the same thing, since
+     * when he adds a person, he adds that person to the group using groupAddPerson. Tbe question is,
+     * does one need to use both personDelete() and groupRemovePerson() or just one?
+     */
+    protected String removePersonFromGroup(String personID) {
+        System.out.println("Removing person from group: " + personID + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.groupRemovePerson(new PostParameters().setGroupName(groupName).setPersonId(personID));
+        }
+        catch (FaceppParseException e) {
+            e.printStackTrace();
+        }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-        protected String removePersonWName(String personName){
+    protected String removePerson(String personID){
+        System.out.println("Removing person: " + personID + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personDelete(new PostParameters().setPersonId(personID));
+        }
+        catch (FaceppParseException e) {
+            e.printStackTrace();
+        }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
+
+    protected String removePersonWName(String personName){
         System.out.println("Removing person: " + personName + "\n");
         JSONObject result = new JSONObject();
         try {
@@ -205,106 +250,126 @@ public class FacePPCommunicator extends FRServiceHandler {
         }
         System.out.println("result: " + result.toString() + "\n");
         return result.toString();
+    }
+
+    /**
+     * Gets the face ID from the given result.
+     *
+     */
+    private String getFaceId (JSONObject result){
+        String faceId = null;
+        System.out.println("Retrieving face ID\n");
+        try {
+            faceId = result.getJSONArray("face").getJSONObject(0).getString("face_id");
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-
-          /**
-          * Gets the face ID from the given result.
-          *
-          */
-         private String getFaceId (JSONObject result){
-             String faceId = "";
-             System.out.println("Retrieving face ID\n");
-             try {
-                 faceId = result.getJSONArray("face").getJSONObject(0).getString("face_id");
-             } catch (JSONException e) {
-                 e.printStackTrace();
-             }
-             System.out.println("faceId: " + faceId);
-             return faceId;
-         }
+        System.out.println("faceId: " + faceId);
+        return faceId;
+    }
 
 
-         /**
-          * Adds a face to a person using the person's name and an image
-          */
-        protected String addFaceToPerson(String personID, String url) {
-            System.out.println("adding face to person: " + personID + "\n");
-            String faceID = detectFace(url); //gets the faceID associated with an image.
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.personAddFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
-            } catch (FaceppParseException e) {
-                e.printStackTrace();
+    /**
+     * Adds a face to a person using the person's name and an image
+     */
+    protected String addFaceToPerson(String personID, String url) {
+        System.out.println("adding face to person: " + personID + "\n");
+        String faceID = detectFace(url); //gets the faceID associated with an image.
+        if (faceID == null) {
+        return null;
+        }
+        if (faceID.contains(IMAGE_ERROR))
+        {
+            return IMAGE_ERROR + faceID;
+        }
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personAddFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
+        } catch (FaceppParseException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains(busyServer)) {
+            return busyServer;
             }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-        protected String addFaceToPerson(String personID, byte[] data) {
-            System.out.println("adding face to person: " + personID + "\n");
-            String faceID = detectFace(data); //gets the faceID associated with an image.
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.personAddFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
-            } catch (FaceppParseException e) {
-                e.printStackTrace();
+    protected String addFaceToPerson(String personID, byte[] data) {
+        System.out.println("adding face to person: " + personID + "\n");
+        String faceID = detectFace(data); //gets the faceID associated with an image.
+        if (faceID == null) {
+        return null;
+        }
+        if (faceID.contains(IMAGE_ERROR)) //something went wrong when trying to detect a face.
+        {
+        return faceID;
+        }
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personAddFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
+        } catch (FaceppParseException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains(busyServer)) {
+                return busyServer;
             }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-        protected String addFaceToPerson(String personID, File file) {
-            System.out.println("adding face to person: " + personID + "\n");
-            String faceID = detectFace(file); //gets the faceID associated with an image.
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.personAddFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
-            } catch (FaceppParseException e) {
-                e.printStackTrace();
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
+    protected String addFaceToPerson(String personID, File file) {
+        System.out.println("adding face to person: " + personID + "\n");
+        String faceID = detectFace(file); //gets the faceID associated with an image.
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personAddFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
+        } catch (FaceppParseException e) {
+            e.printStackTrace();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-          /**
-          * Removes a face from a person using the person's ID and the face ID.
-          */
-        protected String removeFace(String personID, String faceID){
-            System.out.println("Removing face from person: " + personID);
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.personRemoveFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            System.out.println("Remove face result: " + result.toString());
-            return result.toString();
+    /**
+     * Removes a face from a person using the person's ID and the face ID.
+     */
+    protected String removeFace(String personID, String faceID){
+        System.out.println("Removing face from person: " + personID);
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.personRemoveFace(new PostParameters().setPersonId(personID).setFaceId(faceID));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
+        System.out.println("Remove face result: " + result.toString());
+        return result.toString();
+    }
 
 
 
-          /**
-          * Creates a person group.
-           * returns the group id
-          */
-        protected String createGroup(){
-            System.out.println("[facepp] Creating group: " + groupName + "\n");
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.groupCreate(new PostParameters().setGroupName(groupName));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            System.out.println("create group result: " + result.toString() + "\n");
-            return result.toString();
+    /**
+     * Creates a person group.
+     * returns the group id
+     */
+    protected String createGroup(){
+        System.out.println("[facepp] Creating group: " + groupName + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.groupCreate(new PostParameters().setGroupName(groupName));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
+        System.out.println("create group result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-          /**
-          * Removes an existing person group.
-          * Since the class uses one group name, shouldn't this take no parameters? Certain functions don't take
-           * group name as a parameter and assume it's the one assigned to the class instance.
-          */
-        protected String removeGroup(String groupName){
+    /**
+     * Removes an existing person group.
+     * Since the class uses one group name, shouldn't this take no parameters? Certain functions don't take
+     * group name as a parameter and assume it's the one assigned to the class instance.
+     */
+    protected String removeGroup(String groupName){
         JSONObject result = new JSONObject();
         System.out.println("removing group: " + groupName + "\n");
         try {
@@ -314,42 +379,42 @@ public class FacePPCommunicator extends FRServiceHandler {
         }
         System.out.println("result: " + result.toString() + "\n");
         return result.toString();
+    }
+
+    /**
+     * Adds a person to a group with the person's ID.
+     */
+    private String addPersonToGroup(String personID){
+        System.out.println("Adding person to group: " + personID + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.groupAddPerson(new PostParameters().setGroupName(groupName).setPersonId(personID));
         }
-
-          /**
-          * Adds a person to a group with the person's ID.
-          */
-          private String addPersonToGroup(String personID){
-              System.out.println("Adding person to group: " + personID + "\n");
-              JSONObject result = new JSONObject();
-              try {
-                  result = httpRequests.groupAddPerson(new PostParameters().setGroupName(groupName).setPersonId(personID));
-              }
-              catch (FaceppParseException e) {
-                  e.printStackTrace();
-              }
-              System.out.println("result: " + result.toString() + "\n");
-              return result.toString();
-          }
-
-
-        /**
-          * Face trains a person in preparation for identification.
-          */
-        protected String trainPerson(String personID){
-            System.out.println("Training Person" + personID + "\n");
-            JSONObject result = new JSONObject();
-            try {
-                result  = httpRequests.trainVerify(new PostParameters().setPersonId(personID));
-                return result.getString("session_id");
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return "FAILURE";
+        catch (FaceppParseException e) {
+            e.printStackTrace();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
+
+
+    /**
+     * Face trains a person in preparation for identification.
+     */
+    protected String trainPerson(String personID){
+        System.out.println("Training Person" + personID + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result  = httpRequests.trainVerify(new PostParameters().setPersonId(personID));
+            return result.getString("session_id");
+        } catch (FaceppParseException e){
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        System.out.println("result: " + result.toString() + "\n");
+        return "FAILURE";
+    }
 
     /**
      * Face trains a group of people.
@@ -367,132 +432,202 @@ public class FacePPCommunicator extends FRServiceHandler {
         } catch (FaceppParseException e){
             e.printStackTrace();
         } catch (JSONException e) {
-           e.printStackTrace();
+            e.printStackTrace();
         }
         return "UNSUCCESFULL RETRIEVAL OF SESSION INFO FOR TRAINING";
     }
 
 
 
-        /**
-          * Attempts to identify the person in the group in the image at the given URL
-          */
-        protected String identifyPersonInGroup(String url){
-            System.out.println("Identifying person in url: " + url + "\n");
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.recognitionIdentify(new PostParameters().setGroupName(groupName).setUrl(url));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
+    /**
+     * Attempts to identify the person in the group in the image at the given URL
+     */
+    protected String identifyPersonInGroup(String url){
+        System.out.println("Identifying person in url: " + url + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.recognitionIdentify(new PostParameters().setGroupName(groupName).setUrl(url));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-        protected String identifyPerson(String personId, String url){
-            System.out.println("Identifying person in url: " + url + "\n");
-            JSONObject result = new JSONObject();
-            String faceId = detectFace(url);
-            try {
-                result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
+    protected String identifyPerson(String personId, String url){
+        System.out.println("Identifying person in url: " + url + "\n");
+        JSONObject result = new JSONObject();
+        String faceId = detectFace(url);
+        try {
+            result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
 
     /**
-        * Attempts to identify the person in the given image file.
-        */
-        protected String identifyPersonInGroup(File file){
-            System.out.println("Identifying person in file: " + file + "\n");
-            JSONObject result = new JSONObject();
-            try {
-                result = httpRequests.trainIdentify(new PostParameters().setGroupName(groupName).setImg(file));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
+     * Attempts to identify the person in the given image file.
+     */
+    protected String identifyPersonInGroup(File file){
+        System.out.println("Identifying person in file: " + file + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.trainIdentify(new PostParameters().setGroupName(groupName).setImg(file));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-        protected String identifyPerson(String personId, File file){
-            System.out.println("Identifying person in url: " + file + "\n");
-            JSONObject result = new JSONObject();
-            String faceId = detectFace(file);
-            try {
-                result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return result.toString();
+    protected String identifyPerson(String personId, File file){
+        System.out.println("Identifying person in url: " + file + "\n");
+        JSONObject result = new JSONObject();
+        String faceId = detectFace(file);
+        try {
+            result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
-          /**
-          * Attempts to identify the person in the given image byte array.
-          */
-         protected String identifyPersonInGroup(byte[] data){
-             System.out.println("Identifying person in data: " + data + "\n");
-             JSONObject result = new JSONObject();
-             try {
-                 result = httpRequests.trainIdentify(new PostParameters().setGroupName(groupName).setImg(data));
-             } catch (FaceppParseException e){
-                 e.printStackTrace();
-             }
-             System.out.println("result: " + result.toString() + "\n");
-             return result.toString();
-         }
-
-        protected JSONObject identifyPerson(String personId, byte[] data){
-            System.out.println("Identifying person in url: " + data + "\n");
-            JSONObject result = new JSONObject();
-            String faceId = detectFace(data);
-            try {
-                result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
-            } catch (FaceppParseException e){
-                e.printStackTrace();
-                return null;
-            }
-            System.out.println("result: " + result.toString() + "\n");
-            return result;
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
+    /**
+     * Attempts to identify the person in the given image byte array.
+     */
+    protected String identifyPersonInGroup(byte[] data){
+        System.out.println("Identifying person in data: " + data + "\n");
+        JSONObject result = new JSONObject();
+        try {
+            result = httpRequests.trainIdentify(new PostParameters().setGroupName(groupName).setImg(data));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
         }
+        System.out.println("result: " + result.toString() + "\n");
+        return result.toString();
+    }
 
-    public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images){
+    protected JSONObject identifyPerson(String personId, byte[] data){
+        System.out.println("Identifying person in url: " + data + "\n");
+        JSONObject result = new JSONObject();
+        String faceId = detectFace(data);
+        if (faceId == null) {
+        return null;
+        }
+        if (faceId.contains(IMAGE_ERROR)) {
+            return null;
+        }
+        if (faceId == busyServer || faceId == IMAGE_ERROR)
+        try {
+            result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
+        } catch (FaceppParseException e){
+            e.printStackTrace();
+            return null;
+        }
+        System.out.println("result: " + result.toString() + "\n");
+        return result;
+    }
+
+    public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images) {
         String serviceName = "facepp";
-        FacePPCommunicator fpp = new FacePPCommunicator(apiKey,apiSecret);
-        String personId = fpp.createPerson(userID);
+        FacePPCommunicator fpp = new FacePPCommunicator(apiKey, apiSecret);
+        FRServiceHandlerTrainResponse response =
+                new FRServiceHandlerTrainResponse(serviceName, false, userID, false, images);
+        if (userID == null){
+            return response;
+        }
+        if (images == null) {
+            return response;
+        }
+        String personId = fpp.createPerson();
+        if (personId == busyServer) { //server too busy.
+            return response;
+        }
         Iterator<ImageData> it = images.iterator();
         JSONObject result;
-        int tries = 0;
         boolean goodTraining = false;
         boolean serverResponded = false;
+        int index = 0;
+        int goodImages = 0;
         while (it.hasNext()) {
-            fpp.addFaceToPerson(personId,it.next().getImageBinary());
+            ImageData image = it.next();
+            String addFaceResult = fpp.addFaceToPerson(personId,image.getImageBinary());
+            if (addFaceResult == busyServer){
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                addFaceResult = fpp.addFaceToPerson(personId,image.getImageBinary());
+                //service not available or something went wrong with the image.
+                //Need to implement more error handling for iteration 2.
+               // removePerson(personId);
+                return response;
+            }
+            if (addFaceResult == busyServer) {
+            //do nothing. The image may be good to use. The server is just busy.
+            }
+            else
+            {
+                if (addFaceResult.contains(IMAGE_FORMAT_ERROR)){
+                    images.get(index).addCode(ErrorCodes.IMAGE_ERROR_UNSUPPORTED_FORMAT);
+                }
+                else if (addFaceResult.contains(IMAGE_DOWNLOAD_ERROR)){
+                    images.get(index).addCode(ErrorCodes.IMAGE_ERROR_FAILED_TO_DOWNLOAD);
+                }
+                else if (addFaceResult.contains(IMAGE_FACE_NOT_DETECTED)){
+                    images.get(index).addCode(ErrorCodes.IMAGE_ERROR_FACE_NOT_DETECTED);
+                }
+                else if (addFaceResult.contains(IMAGE_BAD_JSON_TAG)){
+                    images.get(index).addCode(ErrorCodes.BAD_JSON_TAG);
+                }
+                else if (addFaceResult.contains(IMAGE_FILE_TOO_LARGE)){
+                    images.get(index).addCode(ErrorCodes.IMAGE_ERROR_FILE_TOO_LARGE);
+                }
+                else if (addFaceResult.contains(IMAGE_ERROR)) {
+                    images.get(index).addCode(ErrorCodes.IMAGE_ERROR_UNKNOWN);
+                }
+                else {
+                    images.get(index).addCode(ErrorCodes.OK);
+                    goodImages++;
+                }
+            }
+            index++;
         }
-        do {
-            try {
-                String sessionId = fpp.trainPerson(personId);
-                serverResponded = true;
-                TimeUnit.SECONDS.sleep(1);
-                result = httpRequests.infoGetSession(new PostParameters().setSessionId(sessionId));
-                goodTraining = (result.getString("status") == "SUCC");
-            }
-            catch (FaceppParseException e){
-                e.printStackTrace();
-            }
-            catch (JSONException e){
-                e.printStackTrace();
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            tries++;
-        } while ((!goodTraining) && (tries < 10));
-        FRServiceHandlerTrainResponse response =
+        int tries = 0;
+        String sessionId = null;
+        if (goodImages >= MINIMUM_GOOD_FPP_IMAGES) { //Need at least 5 good images for training to be meaningful.
+            do {
+                try {
+                    if (!serverResponded) { //only need to call train once.
+                        sessionId = fpp.trainPerson(personId); //if the server is busy this should execute again.
+                        serverResponded = true; //if we get here, then the server responded.
+                    }
+                    TimeUnit.SECONDS.sleep(2); //give the server a couple seconds to train.
+                    if (sessionId != null) {
+                        result = httpRequests.infoGetSession(new PostParameters().setSessionId(sessionId));
+                        goodTraining = (result.getString("status") == "SUCC"); //training was successful.
+                    }
+                } catch (FaceppParseException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                tries++;
+            } while ((!goodTraining) && (tries < 5));
+            FRServiceHandlerTrainResponse response2 =
+                    new FRServiceHandlerTrainResponse(serviceName, serverResponded, personId, goodTraining, images);
+            return response2;
+        }
+        //Need a new response to account for error codes added to the images.
+        FRServiceHandlerTrainResponse response3 =
                 new FRServiceHandlerTrainResponse(serviceName, serverResponded, personId, goodTraining, images);
-        return response;
+        return response3;
     }
 
     public FRServiceHandlerVerifyResponse verify(String personID, ImageData image){
@@ -503,26 +638,35 @@ public class FacePPCommunicator extends FRServiceHandler {
         String FRPersonID = personID;
         JSONObject result = identifyPerson(personID, image.getImageBinary());
         FRServiceHandlerVerifyResponse response = new FRServiceHandlerVerifyResponse(serviceName,false,0,80,personID);
+        if (result == null) //the result is null if something went wrong with identify.
+        {
+            return response;
+        }
+        if (personID == null) {
+            return response;
+        }
+        if (image == null){
+            return response;
+        }
         if (result != null) {
             {
-            try {
-                confidence = (float)result.getDouble("confidence");
-            }
-            catch (JSONException e){
-                e.printStackTrace();
-                return response;
-            }
-            serviceResponded = true;
-            cutoff = 80;
-            FRServiceHandlerVerifyResponse response2 =
-                    new FRServiceHandlerVerifyResponse(serviceName,serviceResponded,confidence,cutoff,personID);
+                try {
+                    confidence = (float)result.getDouble("confidence");
+                }
+                catch (JSONException e){
+                    e.printStackTrace();
+                    return response;
+                }
+                serviceResponded = true;
+                cutoff = 80;
+                FRServiceHandlerVerifyResponse response2 =
+                        new FRServiceHandlerVerifyResponse(serviceName,serviceResponded,confidence,cutoff,personID);
                 return response2;
             }
-
-            }
+        }
         return response;
-
     }
+
     public String getFRServiceName(){
         return "facepp";
     }
@@ -530,14 +674,15 @@ public class FacePPCommunicator extends FRServiceHandler {
     public double getFRServiceCutoff(){
         return 80;
     }
+
     public static void main(String[] args) {
         String apiKey = "15bd4507cc5030eb330d4ab62ce5fd69";
         String apiSecret = "LI5HIlv6RsvY_Si2t0GwE9NQZPGbuHW6";
         FacePPCommunicator fpp = new FacePPCommunicator(apiKey, apiSecret);
         //fpp.removeGroup(fpp.groupName);
         fpp.createGroup();
-       // fpp.removePersonWName("person_8");
-     //   fpp.removePerson("person_8");
+        // fpp.removePersonWName("person_8");
+        //   fpp.removePerson("person_8");
         String personId = fpp.createPersonInGroup("person_8");
         fpp.addFaceToPerson(personId,
                 "https://www.whitehouse.gov/sites/whitehouse.gov/files/images/first-family/44_barack_obama%5B1%5D.jpg");
@@ -564,18 +709,16 @@ public class FacePPCommunicator extends FRServiceHandler {
                 "http://cbsnews2.cbsistatic.com/hub/i/r/2015/10/09/f27caaea-86d1-41e2-bec2-97e89e5dba03/thumbnail/770x430/0a4b24d154ee526bb6811f1888e16600/presidentobamamain.jpg");
         fpp.trainPerson(personId);
         try{
-        TimeUnit.SECONDS.sleep(5);
+            TimeUnit.SECONDS.sleep(5);
         }
         catch (InterruptedException e){
             e.printStackTrace();
         }
         fpp.identifyPerson(personId, "http://i.huffpost.com/gen/2518262/images/n-OBAMA-628x314.jpg");
-         fpp.removePersonWName("person_8"); //removing the person removes them from facepp removes them from the group.
-       // fpp.removePersonFromGroup(personId);
-       fpp.removeGroup(fpp.groupName);
+        fpp.removePersonWName("person_8"); //removing the person removes them from facepp removes them from the group.
+        // fpp.removePersonFromGroup(personId);
+        fpp.removeGroup(fpp.groupName);
     }
 }
-
-
 
 
