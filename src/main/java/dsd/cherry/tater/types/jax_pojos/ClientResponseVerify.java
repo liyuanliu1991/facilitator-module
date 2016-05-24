@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dsd.cherry.tater.types.ErrorCodes;
 
+import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +15,7 @@ import java.util.List;
 public class ClientResponseVerify {
     private boolean match;
     private List<ErrorCodes> codes;
-    private int HTTPStatusCode;
+    private Status HTTPStatusCode;
 
     public ClientResponseVerify() {
         codes = new ArrayList<ErrorCodes>();
@@ -36,7 +37,8 @@ public class ClientResponseVerify {
     @JsonProperty("success")
     public boolean getMatch() { return match; }
 
-    public void setHTTPStatusCode(int code) { this.HTTPStatusCode = code; }
+    public void setHTTPStatusCode(Status code) { this.HTTPStatusCode = code; }
+    public void setHTTPStatusCode(int code) { this.HTTPStatusCode = Status.fromStatusCode(code); }
 
-    public int getHTTPStatusCode() { return HTTPStatusCode; }
+    public Status getHTTPStatusCode() { return HTTPStatusCode; }
 }

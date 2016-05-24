@@ -69,6 +69,12 @@ public class FacilitatorService {
         ClientResponseRegister reply = new ClientResponseRegister(); // this will be the response
         reply.setHTTPCode(Response.Status.INTERNAL_SERVER_ERROR); // status code fail by default
 
+        System.out.println("Request to tater:" + contextReq.getLocalPort() + "/" + contextUri.getPath() + " from "
+                + contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
+                + (contextReq.getRemoteAddr().equals(contextReq.getLocalAddr()) ?
+                " (The call is coming from inside the house.)" :
+                " (The call is coming from outside the house.)"));
+
         // set it up so images are mapped correctly
         ObjectMapper map = this.mapper.copy();
         map.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
@@ -130,28 +136,44 @@ public class FacilitatorService {
     public Response verify(String JSON) {
         ObjectMapper mapIn = this.mapper.copy();
         mapIn.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
-        ClientRequestVerify req;
-        try {
-            req = mapIn.readValue(JSON, ClientRequestVerify.class);
-        } catch (IOException e) {
-            System.out.println("Error reading JSON Verify Request: " + e.getMessage());
-            e.printStackTrace();
-            return Response.status(400).entity("Error reading JSON request.").build();
-        }
+        ClientRequestVerify req; // this is the request
+        ClientResponseVerify reply = new ClientResponseVerify(); // this is the reply
+        reply.setHTTPStatusCode(Response.Status.INTERNAL_SERVER_ERROR); // fail by default
 
-        System.out.println("Request from "
+        System.out.println("Request to tater:" + contextReq.getLocalPort() + "/" + contextUri.getPath() + " from "
                 + contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
                 + (contextReq.getRemoteAddr().equals(contextReq.getLocalAddr()) ?
                 " (The call is coming from inside the house.)" :
                 " (The call is coming from outside the house.)"));
-        System.out.println("ImageId: " + req.getImage().getImageID());
-        System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage()
-                                                                              .getImageBinary()).substring(0,32) + "...");
 
-        SMVerifyData result = services.verify(req.getFACIDs(), req.getImage());
-        ClientResponseVerify reply = new ClientResponseVerify();
-        reply.setHTTPStatusCode(200);
-        reply.setMatch(result.isMatch());
+        try {
+            req = mapIn.readValue(JSON, ClientRequestVerify.class);
+
+            // validate request
+            ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+            Validator validator = factory.getValidator();
+            Set<ConstraintViolation<ClientRequestVerify>> violations = validator.validate(req);
+
+            if (violations.size() > 0) {
+                reply.addStatusCode(ErrorCodes.BAD_JSON_TAG);
+                reply.setHTTPStatusCode(Response.Status.BAD_REQUEST);
+            }
+            else {
+                System.out.println("ImageId: " + req.getImage().getImageID());
+                System.out.println("ImageB64: " + DatatypeConverter.printBase64Binary(req.getImage()
+                        .getImageBinary()).substring(0,32) + "...");
+                SMVerifyData result = services.verify(req.getFACIDs(), req.getImage());
+                reply.setHTTPStatusCode(Response.Status.OK);
+                reply.setMatch(result.isMatch());
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading JSON Verify Request: " + e.getMessage());
+            e.printStackTrace();
+            reply.addStatusCode(ErrorCodes.BAD_JSON_TAG);
+            reply.setHTTPStatusCode(Response.Status.BAD_REQUEST);
+        }
+
+
 
         return Response.status(reply.getHTTPStatusCode()).entity(reply).build();
     }
