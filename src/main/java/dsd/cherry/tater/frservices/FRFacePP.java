@@ -201,9 +201,13 @@ public class FRFacePP extends FRServiceHandler {
                 }
             }
         } catch (FaceppParseException e) {
-            System.err.println("Error detecting face: " + e.getMessage());
+            String m = e.getMessage();
+            System.err.println("Error detecting face: " + m);
             try {
-                FaceppCode code = FaceppCode.fromErrorCode(e.getErrorCode());
+                // m.getErrorCode() uselessly doesn't return the error code, so we must parse
+                FaceppCode code = FaceppCode.fromErrorCode(
+                        Integer.parseInt(m.substring(m.indexOf("code=") + 5, m.indexOf(",")))
+                );
                 switch (code) {
                     case IMAGE_ERROR_UNSUPPORTED_FORMAT:
                         System.err.println("Marking image as being in an unsupported format.");
@@ -214,7 +218,8 @@ public class FRFacePP extends FRServiceHandler {
                         img.addCode(ErrorCodes.IMAGE_ERROR_FILE_TOO_LARGE);
                         break;
                     default:
-                        System.err.println("Unhandled error.");
+                        System.err.println("Unknown error. Marking image as having an unknown problem.");
+                        img.addCode(ErrorCodes.IMAGE_ERROR_UNKNOWN);
                 }
             } catch (NullPointerException f) {
                 System.err.println("Error getting Facepp Code: " + f.getMessage());

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import dsd.cherry.tater.types.FacilitatorID;
 import dsd.cherry.tater.types.ImageData;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -12,6 +14,8 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientRequestRegister {
+    @Valid
+    @NotNull
     private List<ImageData> images;
 
     @JsonProperty("pictures")

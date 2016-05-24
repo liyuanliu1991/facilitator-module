@@ -65,6 +65,16 @@
       <artifactId>httpmime</artifactId>
       <version>4.5.2</version>
     </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>5.2.4.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator-annotation-processor</artifactId>
+      <version>5.2.4.Final</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>tater</finalName>

@@ -1,5 +1,6 @@
 package dsd.cherry.tater.types;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
  */
 public class ImageData {
     private String imageID;
+    @NotNull
     private byte[] image;
     private List<ErrorCode> codes;
     private boolean accepted;

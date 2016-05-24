@@ -1,6 +1,10 @@
 package dsd.cherry.tater;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -21,6 +25,7 @@ import dsd.cherry.tater.types.jax_pojos.ClientResponseVerify;
 import dsd.cherry.tater.types.jax_pojos.ClientResponseRegister;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * Exposes the public API of the Tater web service. Tater is modeled after the requirements set forth for the
@@ -41,6 +46,8 @@ public class FacilitatorService {
     public FacilitatorService() {
         mapper = new ObjectMapper();
         services = new ServiceManager(10);
+        // TODO: Configuration loading for API credentials
+        // TODO: Switch to Joey's FPP handler
         services.addService(new FRFacePP("30f10080215674ebed72c18753e6a830",
                                             "CBtHB1BdopXQsDClTl6f2F9r4rquPOTk",
                                             5));
@@ -60,7 +67,7 @@ public class FacilitatorService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response train(String JSON) {
         ClientResponseRegister reply = new ClientResponseRegister(); // this will be the response
-        Response.Status statusCode = Response.Status.OK; // this will be the HTTP response code
+        reply.setHTTPCode(Response.Status.INTERNAL_SERVER_ERROR); // status code fail by default
 
         // set it up so images are mapped correctly
         ObjectMapper map = this.mapper.copy();
@@ -72,33 +79,39 @@ public class FacilitatorService {
             req = map.readValue(JSON, ClientRequestRegister.class);
 
             // validate request
-
-
-            // train the services and put the results in the reply
-            SMTrainData result;
-            result = services.train(null, null, req.getImages());
-            reply.setTrainingStatus(result.getTrainingStatus());
-            reply.setFACIDs(result.getFacIDs());
-            reply.setHTTPCode(Response.Status.OK);
-            for (ImageData img : result.getImageData()) {
-                reply.addCodes(img.getCodes());
+            ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+            Validator validator = factory.getValidator();
+            Set<ConstraintViolation<ClientRequestRegister>> violations = validator.validate(req);
+            if (violations.size() > 0) {
+                System.out.println("Validation failed: A field in the request was missing or malformed.");
+                reply.setFACIDs(null);
+                reply.addCode(ErrorCodes.BAD_JSON_TAG);
+                reply.setHTTPCode(Response.Status.BAD_REQUEST);
+            }
+            else {
+                // train the services and put the results in the reply
+                SMTrainData result;
+                result = services.train(null, null, req.getImages());
+                reply.setTrainingStatus(result.getTrainingStatus());
+                reply.setFACIDs(result.getFacIDs());
+                reply.setHTTPCode(Response.Status.OK);
+                for (ImageData img : result.getImageData()) {
+                    reply.addCodes(img.getCodes());
+                }
             }
         } catch (IOException e) {
             System.out.println("Error reading JSON Train Request: " + e.getMessage());
-            reply.addFACID(null);
+            reply.setFACIDs(null);
             reply.addCode(ErrorCodes.BAD_JSON_TAG);
+            reply.setHTTPCode(Response.Status.BAD_REQUEST);
         }
-
-        // validate request
-
 
         // train the services and put the results in the reply
 
         try {
-            return Response.status(statusCode).entity(map.writeValueAsString(reply)).build();
+            return Response.status(reply.getHTTPCode()).entity(map.writeValueAsString(reply)).build();
         } catch (JsonProcessingException f) {
-            statusCode = Response.Status.INTERNAL_SERVER_ERROR;
-            return Response.status(statusCode)
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("tater/" + contextUri.getPath() + ": Fatal JSON processing error.").build();
         }
     }
