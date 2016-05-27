@@ -15,10 +15,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(using = StatusCodeSerializer.class, as = String.class)
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public enum ErrorCodes {
+	//错误码的枚举类型。其中每个枚举值是含有一个私有错误码变量。必须要定义value和构造方法ErrorCodes(){}。每一个枚举成员后面跟（value）
     /* A placeholder error code for when one is absolutely needed but no error has occurred.
      * In general, this code should not be used; objects should be left null or lists empty.
      */
-    OK(0) {
+    OK(0) {  
         @Override
         public String getMessage() {
             return "OK";

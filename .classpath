@@ -28,5 +28,6 @@
 			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/a864016618/Downloads/httpcomponents-client-4.5.2/lib/httpcore-4.4.4.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
