@@ -510,17 +510,39 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
-    protected JSONObject identifyPerson(String personId, byte[] data){
-        System.out.println("Identifying person in url: " + data + "\n");
+    protected JSONObject identifyPerson(String personId, ImageData image){
+        //System.out.println("Identifying person in url: " + data + "\n");
         JSONObject result = new JSONObject();
-        String faceId = detectFace(data);
+        String faceId = detectFace(image.getImageBinary());
+        if (faceId.contains(IMAGE_ERROR)) {
+            if (faceId.contains(IMAGE_FORMAT_ERROR)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_UNSUPPORTED_FORMAT);
+            }
+            else if (faceId.contains(IMAGE_DOWNLOAD_ERROR)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_FAILED_TO_DOWNLOAD);
+            }
+            else if (faceId.contains(IMAGE_FACE_NOT_DETECTED)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_FACE_NOT_DETECTED);
+            }
+            else if (faceId.contains(IMAGE_BAD_JSON_TAG)){
+                image.addCode(ErrorCodes.BAD_JSON_TAG);
+            }
+            else if (faceId.contains(IMAGE_FILE_TOO_LARGE)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_FILE_TOO_LARGE);
+            }
+            else if (faceId.contains(IMAGE_ERROR)) {
+                image.addCode(ErrorCodes.IMAGE_ERROR_UNKNOWN);
+            }
+            else {
+                image.addCode(ErrorCodes.OK);
+            }
+        }
         if (faceId == null) {
         return null;
         }
-        if (faceId.contains(IMAGE_ERROR)) {
-            return null;
+        if (faceId == busyServer) {
+        return null;
         }
-        if (faceId == busyServer || faceId == IMAGE_ERROR)
         try {
             result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
         } catch (FaceppParseException e){
@@ -636,9 +658,9 @@ public class FacePPCommunicator extends FRServiceHandler {
         float confidence;
         final float cutoff;
         String FRPersonID = personID;
-        JSONObject result = identifyPerson(personID, image.getImageBinary());
+        JSONObject result = identifyPerson(personID, image);
         FRServiceHandlerVerifyResponse response = new FRServiceHandlerVerifyResponse(serviceName,false,0,80,personID);
-        if (result == null) //the result is null if something went wrong with identify.
+        if (result == null) //the result is null if something went wrong with face detection in identify
         {
             return response;
         }
