@@ -591,6 +591,7 @@ public class FacePPCommunicator extends FRServiceHandler {
             }
             if (addFaceResult == busyServer) {
             //do nothing. The image may be good to use. The server is just busy.
+            index++;
             }
             else
             {
