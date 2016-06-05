@@ -33,7 +33,6 @@ import dsd.cherry.tater.frservices.FRServiceHandler;
  * of the people in the group.
  */
 public class FacePPCommunicator extends FRServiceHandler {
-
     private String apiKey = "15bd4507cc5030eb330d4ab62ce5fd69";
     private String apiSecret = "LI5HIlv6RsvY_Si2t0GwE9NQZPGbuHW6";
     private Boolean useChineseServer;
@@ -51,6 +50,7 @@ public class FacePPCommunicator extends FRServiceHandler {
 
     /**
      * Constructor
+     * Creates a FacePPCommunicator to be used for communicating with facepp
      */
     public FacePPCommunicator(String apiKey, String apiSecret) {
         this.apiKey = apiKey;
@@ -58,7 +58,6 @@ public class FacePPCommunicator extends FRServiceHandler {
         useChineseServer = false;
         useHttp = true;
         groupName = "faceSqaud2";
-
         initializeHttpRequests();
     }
 
@@ -69,7 +68,7 @@ public class FacePPCommunicator extends FRServiceHandler {
         httpRequests = new HttpRequests(apiKey, apiSecret, useChineseServer, useHttp);
     }
 
-    /**
+    /** NOT USING THIS METHOD
      * Attempts to detect a face in the image at the given URL.
      * Returns the face ID associated with the face in the image
      */
@@ -87,10 +86,9 @@ public class FacePPCommunicator extends FRServiceHandler {
     }
 
 
-    /**
+    /** NOT USING THIS METHOD
      * Attempts to detect a face in the image file.
-     * Why can't we extract face_id from the JSONObject in this case?
-     * Do we need to?
+     * Returns the faceId associated with the face in the image.
      */
     protected String detectFace(File file){
         System.out.println("detecting face in FacePP" + "\n");
@@ -108,8 +106,7 @@ public class FacePPCommunicator extends FRServiceHandler {
 
     /**
      * Attempts to detect a face in the image byte array.
-     * Again, why can't we extract face_id from the JSONObject this time?
-     * Do we need to though?
+     * Returns the faceId associated with the face in the image.
      */
     protected String detectFace(byte[] data) {
         System.out.println("detecting face in FacePP" + "\n");
@@ -126,6 +123,7 @@ public class FacePPCommunicator extends FRServiceHandler {
     }
 
     /**
+     * NOT USING THIS METHOD
      * Creates a person with the given name and adds them to the existing group.
      * We want to do this since for each user, only one group will be necessary, and since
      * each user gets its own instance of FacePPCommunicator, so there shouldn't be any issues
@@ -178,8 +176,8 @@ public class FacePPCommunicator extends FRServiceHandler {
         return personID;
     }
 
-    /**
-     * @param personName An identifier for a given person. Doesn't have to be their actual name
+    /** NOT USING THIS METHOD
+     * @param personName An identifier for a given person assigned by user. Doesn't have to be their actual name
      *                   Note: personID is different. This is assigned by facepp.
      * @return: the personID assigned by facepp. This is another way of communicating to facepp who we are dealing with.
      */
@@ -207,11 +205,8 @@ public class FacePPCommunicator extends FRServiceHandler {
         return personID;
     }
 
-    /**
-     * Removes a person from the group using the person's name.
-     * Keith used personDelete(). I wonder if this does the same thing, since
-     * when he adds a person, he adds that person to the group using groupAddPerson. Tbe question is,
-     * does one need to use both personDelete() and groupRemovePerson() or just one?
+    /** NOT USING THIS METHOD
+     * Removes a person from the group using the person's facepp id.
      */
     protected String removePersonFromGroup(String personID) {
         System.out.println("Removing person from group: " + personID + "\n");
@@ -226,6 +221,9 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
+    /* NOT USING THIS METHOD.
+     * removes a person from facepp using the person's facepp id.
+     */
     protected String removePerson(String personID){
         System.out.println("Removing person: " + personID + "\n");
         JSONObject result = new JSONObject();
@@ -239,6 +237,11 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
+    /* NOT USING THIS METHOD
+     * Removes a person with the given name from facepp if that name exists on facepp and was created by the user.
+     * @personName: the name assigned to a person by the user when a person is created on facepp.
+     * This may not exist if a person was created with using their name.
+     */
     protected String removePersonWName(String personName){
         System.out.println("Removing person: " + personName + "\n");
         JSONObject result = new JSONObject();
@@ -253,8 +256,9 @@ public class FacePPCommunicator extends FRServiceHandler {
     }
 
     /**
-     * Gets the face ID from the given result.
-     *
+     * Gets the face ID from the given JSONObject and returns it.
+     * @result: the JSONObject returned when a person is created on facepp.
+     * It contains the user id assigned by facepp.
      */
     private String getFaceId (JSONObject result){
         String faceId = null;
@@ -269,8 +273,12 @@ public class FacePPCommunicator extends FRServiceHandler {
     }
 
 
-    /**
-     * Adds a face to a person using the person's name and an image
+    /** NOT USING THIS METHOD.
+     * Adds a face to a person using the person's facepp Id and a url image.
+     * @param personID: facepp Id
+     * @param url: url of an image.
+     * If the image has a problem, that error is returned.
+     * Otherwise, it converts the JSONObject to a string a returns it.
      */
     protected String addFaceToPerson(String personID, String url) {
         System.out.println("adding face to person: " + personID + "\n");
@@ -295,6 +303,13 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
+    /**
+     * @param personID: facepp Id for a person on facepp, created by the user.
+     * @param data: image data for a single image.
+     * Converts the resultant JSONObject to a string and returns it if everything went well.
+     * If the image has an error, that is returned instead. If nothing is returned from detectFace,
+     * null is returned.
+     */
     protected String addFaceToPerson(String personID, byte[] data) {
         System.out.println("adding face to person: " + personID + "\n");
         String faceID = detectFace(data); //gets the faceID associated with an image.
@@ -318,6 +333,12 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
+    /**
+     * NOT USING THIS METHOD
+     * @param personID: facepp Id for a person on facepp, created by the user.
+     * @param file: image file to be used.
+     * Returns result in the form of a string.
+     */
     protected String addFaceToPerson(String personID, File file) {
         System.out.println("adding face to person: " + personID + "\n");
         String faceID = detectFace(file); //gets the faceID associated with an image.
@@ -331,8 +352,8 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
-    /**
-     * Removes a face from a person using the person's ID and the face ID.
+    /** NOT USING THIS METHOD.
+     * Removes a face from a person using the person's ID and the face Id associated with the image to be removed.
      */
     protected String removeFace(String personID, String faceID){
         System.out.println("Removing face from person: " + personID);
@@ -348,7 +369,7 @@ public class FacePPCommunicator extends FRServiceHandler {
 
 
 
-    /**
+    /** NOT USING THIS METHOD
      * Creates a person group.
      * returns the group id
      */
@@ -364,10 +385,9 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
-    /**
+    /** NOT USING THIS METHOD
      * Removes an existing person group.
-     * Since the class uses one group name, shouldn't this take no parameters? Certain functions don't take
-     * group name as a parameter and assume it's the one assigned to the class instance.
+     * @param groupName: name of group to be removed.
      */
     protected String removeGroup(String groupName){
         JSONObject result = new JSONObject();
@@ -381,8 +401,9 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
-    /**
-     * Adds a person to a group with the person's ID.
+    /** NOT USING THIS METHOD
+     * Adds a person to class instantiated group with the person's ID.
+     * @param personID: facepp person id of someone user created.
      */
     private String addPersonToGroup(String personID){
         System.out.println("Adding person to group: " + personID + "\n");
@@ -400,6 +421,10 @@ public class FacePPCommunicator extends FRServiceHandler {
 
     /**
      * Face trains a person in preparation for identification.
+     * Ideally the given person associated with the personID will have had at least 5 images of their face added before training.
+     * @param  personID: facepp id of someone user created.
+     * Returns the session_id as a string if everything went well. If not, this method returns "FAILURE". This
+     * is most likely to happen if the server is busy the momemnt we attempt to train.
      */
     protected String trainPerson(String personID){
         System.out.println("Training Person" + personID + "\n");
@@ -417,8 +442,9 @@ public class FacePPCommunicator extends FRServiceHandler {
     }
 
     /**
-     * Face trains a group of people.
-     * @return
+     * NOT USING THIS METHOD
+     * Face trains the group instantiated by the instance of this class.
+     * @returns session info of training training session.
      */
     protected String trainGroup(){
         System.out.println("Training group: " + groupName + "\n");
@@ -439,7 +465,7 @@ public class FacePPCommunicator extends FRServiceHandler {
 
 
 
-    /**
+    /** NOT USING THIS IMAGE
      * Attempts to identify the person in the group in the image at the given URL
      */
     protected String identifyPersonInGroup(String url){
@@ -454,6 +480,11 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
+    /** NOT USING THIS METHOD
+     * @param personId, facepp id of a person created by user.
+     * @param url: url of image.
+     * @return returns verificatication result.
+     */
     protected String identifyPerson(String personId, String url){
         System.out.println("Identifying person in url: " + url + "\n");
         JSONObject result = new JSONObject();
@@ -468,8 +499,9 @@ public class FacePPCommunicator extends FRServiceHandler {
     }
 
 
-    /**
+    /** NOT USING THIS METHOD
      * Attempts to identify the person in the given image file.
+     * returns result of verification attempt.
      */
     protected String identifyPersonInGroup(File file){
         System.out.println("Identifying person in file: " + file + "\n");
@@ -483,6 +515,11 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
+    /** NOT USING THIS METHOD
+     * @param personId: facepp id of a person created by user.
+     * @param file: image file to be used for verifcation
+     * @return verification result in string form
+     */
     protected String identifyPerson(String personId, File file){
         System.out.println("Identifying person in url: " + file + "\n");
         JSONObject result = new JSONObject();
@@ -495,8 +532,10 @@ public class FacePPCommunicator extends FRServiceHandler {
         System.out.println("result: " + result.toString() + "\n");
         return result.toString();
     }
-    /**
+
+    /** NOT USING THIS METHOD
      * Attempts to identify the person in the given image byte array.
+     * Returns verification result in string form.
      */
     protected String identifyPersonInGroup(byte[] data){
         System.out.println("Identifying person in data: " + data + "\n");
@@ -510,17 +549,46 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result.toString();
     }
 
-    protected JSONObject identifyPerson(String personId, byte[] data){
-        System.out.println("Identifying person in url: " + data + "\n");
+    /**
+     * If the image has any problems, this method will add the appropriate error code to the image.
+     * @param personId: facepp id for a person created by user.
+     * @param image: image to used for verifcation
+     * @return: null if the server is busy or if faceId is null,  or something goes wrong with verification attempt.
+     * If everything went well, returns the JSONObject resultant from verification attempt.
+     */
+    protected JSONObject identifyPerson(String personId, ImageData image){
+        //System.out.println("Identifying person in url: " + data + "\n");
         JSONObject result = new JSONObject();
-        String faceId = detectFace(data);
+        String faceId = detectFace(image.getImageBinary());
+        if (faceId.contains(IMAGE_ERROR)) {
+            if (faceId.contains(IMAGE_FORMAT_ERROR)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_UNSUPPORTED_FORMAT);
+            }
+            else if (faceId.contains(IMAGE_DOWNLOAD_ERROR)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_FAILED_TO_DOWNLOAD);
+            }
+            else if (faceId.contains(IMAGE_FACE_NOT_DETECTED)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_FACE_NOT_DETECTED);
+            }
+            else if (faceId.contains(IMAGE_BAD_JSON_TAG)){
+                image.addCode(ErrorCodes.BAD_JSON_TAG);
+            }
+            else if (faceId.contains(IMAGE_FILE_TOO_LARGE)){
+                image.addCode(ErrorCodes.IMAGE_ERROR_FILE_TOO_LARGE);
+            }
+            else if (faceId.contains(IMAGE_ERROR)) {
+                image.addCode(ErrorCodes.IMAGE_ERROR_UNKNOWN);
+            }
+            else {
+                image.addCode(ErrorCodes.OK);
+            }
+        }
         if (faceId == null) {
         return null;
         }
-        if (faceId.contains(IMAGE_ERROR)) {
-            return null;
+        if (faceId == busyServer) {
+        return null;
         }
-        if (faceId == busyServer || faceId == IMAGE_ERROR)
         try {
             result = httpRequests.recognitionVerify(new PostParameters().setPersonId(personId).setFaceId(faceId));
         } catch (FaceppParseException e){
@@ -531,6 +599,15 @@ public class FacePPCommunicator extends FRServiceHandler {
         return result;
     }
 
+    /**
+     * @param userID: facepp Id of person created by user.
+     * @param images: images to be used for training the person with facepp id userID
+     * returns a FRServiceHanlderTrainResponse with the appropriate fields.
+     * For iteration 1, partial training is not implemented.
+     * If any images have errors, the appropriate image error code is added to the image.
+     * Training only takes place if 5 or more images are succesfully added to the person.
+     * If server is busy, this method waits a couple seconds and then tries to add a face to person again.
+     */
     public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images) {
         String serviceName = "facepp";
         FacePPCommunicator fpp = new FacePPCommunicator(apiKey, apiSecret);
@@ -555,20 +632,17 @@ public class FacePPCommunicator extends FRServiceHandler {
         while (it.hasNext()) {
             ImageData image = it.next();
             String addFaceResult = fpp.addFaceToPerson(personId,image.getImageBinary());
-            if (addFaceResult == busyServer){
+            if (addFaceResult.contains(busyServer)){
                 try {
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 addFaceResult = fpp.addFaceToPerson(personId,image.getImageBinary());
-                //service not available or something went wrong with the image.
-                //Need to implement more error handling for iteration 2.
-               // removePerson(personId);
-                return response;
             }
-            if (addFaceResult == busyServer) {
+            if (addFaceResult.contains(busyServer)) {
             //do nothing. The image may be good to use. The server is just busy.
+            index++;
             }
             else
             {
@@ -604,10 +678,14 @@ public class FacePPCommunicator extends FRServiceHandler {
                 try {
                     if (!serverResponded) { //only need to call train once.
                         sessionId = fpp.trainPerson(personId); //if the server is busy this should execute again.
-                        serverResponded = true; //if we get here, then the server responded.
+                        if (sessionId != null){
+                            if(!sessionId.equals("FAILURE")){
+                                serverResponded = true; //if we get here, then the server responded.
+                            }
+                        }
                     }
                     TimeUnit.SECONDS.sleep(2); //give the server a couple seconds to train.
-                    if (sessionId != null) {
+                    if ( ((sessionId != null) && (!sessionId.equals("FAILURE"))) ) {
                         result = httpRequests.infoGetSession(new PostParameters().setSessionId(sessionId));
                         goodTraining = (result.getString("status") == "SUCC"); //training was successful.
                     }
@@ -630,15 +708,21 @@ public class FacePPCommunicator extends FRServiceHandler {
         return response3;
     }
 
+    /**
+     * attempts to verify a person's identity using the given image.
+     * @param personID: facepp id of person to be verified.
+     * @param image: image to be used for verification.
+     * returns FRServiceHanlderVerifyResponse object with appropriate fields.
+     */
     public FRServiceHandlerVerifyResponse verify(String personID, ImageData image){
         String serviceName = "facepp";
         boolean serviceResponded;
         float confidence;
         final float cutoff;
         String FRPersonID = personID;
-        JSONObject result = identifyPerson(personID, image.getImageBinary());
+        JSONObject result = identifyPerson(personID, image);
         FRServiceHandlerVerifyResponse response = new FRServiceHandlerVerifyResponse(serviceName,false,0,80,personID);
-        if (result == null) //the result is null if something went wrong with identify.
+        if (result == null) //the result is null if something went wrong with face detection in identify
         {
             return response;
         }
