@@ -13,25 +13,25 @@ import java.util.List;
 /**
  * Created by James Beach on 5/2/2016.
  */
-public class ClientResponseRegister {
-    private List<FacilitatorID> FACIDs;
+public class ClientResponseTrain {
+    private List<FacilitatorID> FacIDs;
     private List<ErrorCode> codes;
     private boolean isTrained;
     private Response.Status HTTPCode;
 
-    public ClientResponseRegister() {
-        FACIDs = new ArrayList<>();
+    public ClientResponseTrain() {
+        FacIDs = new ArrayList<>();
         codes = new ArrayList<>();
         isTrained = false;
         HTTPCode = Response.Status.OK;
     }
 
     @JsonIgnore
-    public void setFACIDs(List<FacilitatorID> FACIDs) { this.FACIDs = FACIDs; }
+    public void setFacIDs(List<FacilitatorID> FACIDs) { this.FacIDs = FACIDs; }
     @JsonIgnore
-    public void addFACID(FacilitatorID FACID) { this.FACIDs.add(FACID); }
+    public void addFacID(FacilitatorID FACID) { this.FacIDs.add(FACID); }
     @JsonProperty("facilitatorIds")
-    public List<FacilitatorID> getFACIDs() { return FACIDs; }
+    public List<FacilitatorID> getFacIDs() { return FacIDs; }
 
     @JsonIgnore
     public void setTrainingStatus(boolean isTrained) { this.isTrained = isTrained; }

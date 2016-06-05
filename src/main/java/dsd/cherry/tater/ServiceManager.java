@@ -54,8 +54,6 @@ class ServiceManager {
         for (Map.Entry<String,FRServiceHandler> s : services.entrySet()) {
             FRServiceHandlerTrainResponse response;
             // further train the service if it has been trained before
-            // (NOT SUPPORTED AT THIS TIME)
-            // TODO: Remove or comment out this code.
             if (FRPersonIDs.containsKey(s.getKey())) {
                 response = s.getValue().train(FRPersonIDs.get(s.getKey()), images);
             }

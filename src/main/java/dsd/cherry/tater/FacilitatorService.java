@@ -19,10 +19,10 @@ import dsd.cherry.tater.frservices.FRFacePP;
 
 import dsd.cherry.tater.types.*;
 import dsd.cherry.tater.types.jax_mixins.MxImageDataAuthRequest;
-import dsd.cherry.tater.types.jax_pojos.ClientRequestRegister;
+import dsd.cherry.tater.types.jax_pojos.ClientRequestTrain;
 import dsd.cherry.tater.types.jax_pojos.ClientRequestVerify;
+import dsd.cherry.tater.types.jax_pojos.ClientResponseTrain;
 import dsd.cherry.tater.types.jax_pojos.ClientResponseVerify;
-import dsd.cherry.tater.types.jax_pojos.ClientResponseRegister;
 
 import java.io.IOException;
 import java.util.Set;
@@ -59,41 +59,67 @@ public class FacilitatorService {
      * whether a different photograph is of a face that matches the one in the original photos used for training.
      * @param JSON A JSON training request from a client.
      * @return An HTTP response and a JSON data-bound object. See the Facilitator Interface Specification and the
-     *            definition for the ClientResponseRegister object.
+     *            definition for the ClientResponseTrain object.
      */
     @POST
-    @Path("/register")
+    @Path("/train")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response train(String JSON) {
-        ClientResponseRegister reply = new ClientResponseRegister(); // this will be the response
+        System.out.print("Call to tater/" + contextUri.getPath() + " from: ");
+        System.out.println(contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
+                + (contextReq.getRemoteAddr().equals(contextReq.getLocalAddr()) ?
+                " (The call is coming from inside the house.)" :
+                " (The call is coming from outside the house.)"));
+        ClientResponseTrain reply = new ClientResponseTrain(); // this will be the response
         reply.setHTTPCode(Response.Status.INTERNAL_SERVER_ERROR); // status code fail by default
 
         // set it up so images are mapped correctly
         ObjectMapper map = this.mapper.copy();
         map.addMixIn(ImageData.class, MxImageDataAuthRequest.class);
 
-        ClientRequestRegister req; // JSON data will be marshaled to this POJO
+        ClientRequestTrain req; // JSON data will be marshaled to this POJO
 
         try {
-            req = map.readValue(JSON, ClientRequestRegister.class);
+            req = map.readValue(JSON, ClientRequestTrain.class);
 
             // validate request
             ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
             Validator validator = factory.getValidator();
-            Set<ConstraintViolation<ClientRequestRegister>> violations = validator.validate(req);
+            Set<ConstraintViolation<ClientRequestTrain>> violations = validator.validate(req);
             if (violations.size() > 0) {
                 System.out.println("Validation failed: A field in the request was missing or malformed.");
-                reply.setFACIDs(null);
+                reply.setFacIDs(null);
                 reply.addCode(ErrorCodes.BAD_JSON_TAG);
                 reply.setHTTPCode(Response.Status.BAD_REQUEST);
             }
             else {
+                // Log info
+                String logOut = "Request data:\n";
+                logOut += "    Training Images:\n";
+                for (ImageData img : req.getImages()) {
+                    logOut += "        "
+                            + DatatypeConverter.printBase64Binary(img.getImageBinary()).substring(0,32)
+                            + "...\n";
+                }
+                logOut += "    Facilitator IDs:\n";
+                if (req.getFacIDs() != null && !req.getFacIDs().isEmpty()) {
+                    for (FacilitatorID id : req.getFacIDs()) {
+                        logOut += "        {\n"
+                                + "            Service ID: " + id.getFRService() + '\n'
+                                + "             Person ID: " + id.getFRPersonID() + '\n'
+                                + "        }\n";
+                    }
+                }
+                else {
+                    logOut += "        NULL or EMPTY\n";
+                }
+                System.out.print(logOut);
                 // train the services and put the results in the reply
                 SMTrainData result;
-                result = services.train(null, null, req.getImages());
+                result = services.train(null, req.getFacIDs(), req.getImages());
                 reply.setTrainingStatus(result.getTrainingStatus());
-                reply.setFACIDs(result.getFacIDs());
+                reply.setFacIDs(result.getFacIDs());
                 reply.setHTTPCode(Response.Status.OK);
                 for (ImageData img : result.getImageData()) {
                     reply.addCodes(img.getCodes());
@@ -101,7 +127,7 @@ public class FacilitatorService {
             }
         } catch (IOException e) {
             System.out.println("Error reading JSON Train Request: " + e.getMessage());
-            reply.setFACIDs(null);
+            reply.setFacIDs(null);
             reply.addCode(ErrorCodes.BAD_JSON_TAG);
             reply.setHTTPCode(Response.Status.BAD_REQUEST);
         }
@@ -109,8 +135,33 @@ public class FacilitatorService {
         // train the services and put the results in the reply
 
         try {
+            String logOut = "Attempting to send a response...\n";
+            logOut += "    Status Code " + reply.getHTTPCode().getStatusCode() + " (" + reply.getHTTPCode().getReasonPhrase() + ")\n";
+            logOut += "    Training Status: " + (reply.getTrainingStatus() ? "Succeeded" : "Failed") + '\n';
+            logOut += "    Facilitator IDs:\n";
+            if (reply.getFacIDs() != null && !reply.getFacIDs().isEmpty()) {
+                for (FacilitatorID id : reply.getFacIDs()) {
+                    logOut += "        {\n"
+                            + "            Service ID: " + id.getFRService() + '\n'
+                            + "             Person ID: " + id.getFRPersonID() + '\n'
+                            + "        }\n";
+                }
+            }
+            else {
+                logOut += "        NULL or EMPTY\n";
+            }
+            logOut += "    Error Codes:\n";
+            for (ErrorCode c : reply.getCodes()) {
+                logOut += "        " + c.getCode() + " (" + c.getMessage() + ")";
+                if (c.getImageID() != null && !c.getImageID().isEmpty()) {
+                    logOut += " for image with ID " + c.getImageID();
+                }
+                logOut += '\n';
+            }
+            System.out.print(logOut);
             return Response.status(reply.getHTTPCode()).entity(map.writeValueAsString(reply)).build();
         } catch (JsonProcessingException f) {
+            System.out.println("Failed to send response: " + f.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("tater/" + contextUri.getPath() + ": Fatal JSON processing error.").build();
         }
@@ -139,8 +190,8 @@ public class FacilitatorService {
             return Response.status(400).entity("Error reading JSON request.").build();
         }
 
-        System.out.println("Request from "
-                + contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
+        System.out.print("Call to tater/" + contextUri.getPath() + " from: ");
+        System.out.println(contextReq.getRemoteAddr() + " port " + contextReq.getRemotePort()
                 + (contextReq.getRemoteAddr().equals(contextReq.getLocalAddr()) ?
                 " (The call is coming from inside the house.)" :
                 " (The call is coming from outside the house.)"));
