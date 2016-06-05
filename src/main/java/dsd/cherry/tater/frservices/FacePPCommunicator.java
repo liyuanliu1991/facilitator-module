@@ -577,6 +577,7 @@ public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images
         boolean goodTraining = false;
         boolean serverResponded = false;
         int index = 0;
+        int goodIndex = -1;
         int goodImages = 0;
         while (it.hasNext()) {
             ImageData image = it.next();
@@ -616,6 +617,7 @@ public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images
                 else {
                     images.get(index).addCode(ErrorCodes.OK);
                     goodImages++;
+                    goodIndex = index;
                 }
             }
             index++;
@@ -646,7 +648,9 @@ public FRServiceHandlerTrainResponse train(String userID, List<ImageData> images
                 }
                 tries++;
             } while ((!goodTraining) && (tries < 5));
-            JSONObject check = identifyPerson(personId, images.get(index-1));
+            if (goodIndex != -1){
+                JSONObject check = identifyPerson(personId,images.get(goodIndex));
+            }
             FRServiceHandlerTrainResponse response2 =
                 new FRServiceHandlerTrainResponse(serviceName, serverResponded, personId, false, images);
             if (check == null) {
